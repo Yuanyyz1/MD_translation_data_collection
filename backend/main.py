@@ -121,6 +121,39 @@ def on_startup() -> None:
                     {"token": secrets.token_urlsafe(16), "id": user_id},
                 )
 
+        # Optional Vercel/bootstrap admin account.
+        bootstrap_admin_email = normalize_email(os.getenv("BOOTSTRAP_ADMIN_EMAIL", ""))
+        bootstrap_admin_token = (os.getenv("BOOTSTRAP_ADMIN_TOKEN") or "").strip()
+        bootstrap_admin_name = normalize_name(os.getenv("BOOTSTRAP_ADMIN_NAME", "Admin"))
+        if bootstrap_admin_email:
+            existing_admin = conn.execute(
+                text("SELECT id FROM users WHERE email = :email"),
+                {"email": bootstrap_admin_email},
+            ).fetchone()
+            token_to_use = bootstrap_admin_token or secrets.token_urlsafe(16)
+            if existing_admin:
+                conn.execute(
+                    text(
+                        "UPDATE users "
+                        "SET role = 'admin', access_token = :token, name = :name "
+                        "WHERE id = :id"
+                    ),
+                    {"token": token_to_use, "name": bootstrap_admin_name, "id": existing_admin[0]},
+                )
+            else:
+                conn.execute(
+                    text(
+                        "INSERT INTO users (email, password_hash, role, access_token, name, professional_role) "
+                        "VALUES (:email, :password_hash, 'admin', :token, :name, '')"
+                    ),
+                    {
+                        "email": bootstrap_admin_email,
+                        "password_hash": hash_password(secrets.token_urlsafe(24)),
+                        "token": token_to_use,
+                        "name": bootstrap_admin_name,
+                    },
+                )
+
 
 def redirect(url: str) -> RedirectResponse:
     return RedirectResponse(url=url, status_code=status.HTTP_303_SEE_OTHER)
