@@ -18,6 +18,10 @@
         <label>Choose CSV file
             <input type="file" name="file" accept=".csv" required />
         </label>
+        <label style="display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" name="replace_existing" value="1" />
+            Replace existing dataset with same name
+        </label>
         <button type="submit">Upload CSV</button>
     </form>
 

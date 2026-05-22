@@ -911,6 +911,7 @@ async def admin_upload_submit(
     token: str,
     request: Request,
     dataset_name: str = Form(...),
+    replace_existing: str | None = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
@@ -990,6 +991,30 @@ async def admin_upload_submit(
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
             "health_professional_link_rows": get_health_professional_link_rows(db),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
+                "access_token": token,
+            },
+            status_code=400,
+        )
+
+    existing_dataset_names = set(get_available_dataset_names(db))
+    should_replace = (replace_existing or "").strip() == "1"
+    if normalized_dataset_name in existing_dataset_names and not should_replace:
+        return template_response(
+            "admin_upload.html",
+            {
+                "request": request,
+                "current_user": current_user,
+                "message": None,
+                "error": (
+                    f"Dataset '{normalized_dataset_name}' already exists. "
+                    "Use a new dataset name, or tick 'Replace existing dataset with same name'."
+                ),
+                "metadata_rows": metadata_rows,
+                "health_professional_progress_rows": health_professional_progress_rows,
+                "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
+                "health_professional_link_rows": get_health_professional_link_rows(db),
+                "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
+                "available_dataset_names": get_available_dataset_names(db),
                 "access_token": token,
             },
             status_code=400,
