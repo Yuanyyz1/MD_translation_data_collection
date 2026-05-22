@@ -176,7 +176,16 @@ def normalize_professional_role(value: str) -> str:
     return (value or "").strip()
 
 
-def get_health_professional_link_rows(db: Session) -> list[dict[str, str]]:
+def build_base_url(request: Request | None = None) -> str:
+    configured = (os.getenv("PUBLIC_BASE_URL") or "").strip().rstrip("/")
+    if configured:
+        return configured
+    if request is not None:
+        return str(request.base_url).rstrip("/")
+    return "http://127.0.0.1:8000"
+
+
+def get_health_professional_link_rows(db: Session, base_url: str) -> list[dict[str, str]]:
     users = db.scalars(
         select(User)
         .where(User.role == "health_professional")
@@ -222,6 +231,7 @@ def get_health_professional_link_rows(db: Session) -> list[dict[str, str]]:
                 }
             )
 
+        link_path = f"/health-professional/{user.access_token}/tasks"
         rows.append(
             {
                 "health_professional_name": (user.name or "").strip(),
@@ -230,8 +240,8 @@ def get_health_professional_link_rows(db: Session) -> list[dict[str, str]]:
                 "assigned_dataset_1": slot_map.get(1, ""),
                 "assigned_dataset_2": slot_map.get(2, ""),
                 "submitted_dataset_details": submitted_dataset_details,
-                "link_path": f"/health-professional/{user.access_token}/tasks",
-                "link_full": f"http://127.0.0.1:8000/health-professional/{user.access_token}/tasks",
+                "link_path": link_path,
+                "link_full": f"{base_url}{link_path}",
             }
         )
     return rows
@@ -742,7 +752,7 @@ def admin_upload_page(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -778,7 +788,7 @@ def admin_create_health_professional(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-                "health_professional_link_rows": get_health_professional_link_rows(db),
+                "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "access_token": token,
             },
@@ -795,7 +805,7 @@ def admin_create_health_professional(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-                "health_professional_link_rows": get_health_professional_link_rows(db),
+                "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "access_token": token,
             },
@@ -812,7 +822,7 @@ def admin_create_health_professional(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "access_token": token,
             },
@@ -841,7 +851,8 @@ def admin_create_health_professional(
     metadata_rows = get_admin_metadata_rows(db)
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
-    link = f"http://127.0.0.1:8000/health-professional/{user.access_token}/tasks"
+    base_url = build_base_url(request)
+    link = f"{base_url}/health-professional/{user.access_token}/tasks"
     message = f"Health professional link ready: {name} ({professional_role}, {email}) -> {link}"
     return template_response(
         "admin_upload.html",
@@ -853,7 +864,7 @@ def admin_create_health_professional(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -933,7 +944,7 @@ async def admin_upload_submit(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "access_token": token,
             },
@@ -953,7 +964,7 @@ async def admin_upload_submit(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "access_token": token,
             },
@@ -972,7 +983,7 @@ async def admin_upload_submit(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "access_token": token,
             },
@@ -989,7 +1000,7 @@ async def admin_upload_submit(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "access_token": token,
             },
@@ -1012,7 +1023,7 @@ async def admin_upload_submit(
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-                "health_professional_link_rows": get_health_professional_link_rows(db),
+                "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
                 "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
                 "available_dataset_names": get_available_dataset_names(db),
                 "access_token": token,
@@ -1041,7 +1052,7 @@ async def admin_upload_submit(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -1079,7 +1090,7 @@ def admin_delete_dataset(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -1147,7 +1158,7 @@ def admin_assign_health_professional_datasets(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -1182,7 +1193,7 @@ def admin_clear_uploaded_data(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -1216,7 +1227,7 @@ def admin_clear_submitted_output(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -1251,7 +1262,7 @@ def admin_clear_health_professional_tasks(
             "metadata_rows": metadata_rows,
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db),
+            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,
@@ -1405,4 +1416,5 @@ def admin_export_csv_by_health_professional_dataset_query(
     filename = f"submitted_export_{safe_email}_{safe_dataset}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers=headers)
+
 
