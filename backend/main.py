@@ -46,7 +46,13 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 def template_response(name: str, context: dict, status_code: int = 200):
-    return templates.TemplateResponse(name=name, context=context, status_code=status_code)
+    request = context.get("request")
+    return templates.TemplateResponse(
+        request=request,
+        name=name,
+        context=context,
+        status_code=status_code,
+    )
 
 
 @app.on_event("startup")
