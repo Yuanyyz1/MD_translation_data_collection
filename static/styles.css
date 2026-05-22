@@ -524,12 +524,12 @@ td {
   width: 30%;
 }
 
-.hp-progress-table td code {
-  display: inline-block;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.hp-progress-table td .access-link-text {
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.86rem;
 }
 
 .hp-progress-table td .form-grid {

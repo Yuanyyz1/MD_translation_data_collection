@@ -131,8 +131,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a class="btn-link" href="{{ row.link_path }}">Open</a>
-                        <div><code>{{ row.link_full }}</code></div>
+                        <div class="access-link-text">{{ row.link_full }}</div>
                     </td>
                     <td>
                         <form method="post" action="/admin/{{ access_token }}/assign-health-professional-datasets" class="form-grid">
