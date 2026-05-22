@@ -13,8 +13,8 @@
     {% endif %}
 
     <h3>Health Professionals</h3>
-    {% if doctor_users|length == 0 %}
-    <p>No doctor users found. Run <code>python scripts/seed.py</code>.</p>
+    {% if health_professional_users|length == 0 %}
+    <p>No health_professional users found. Run <code>python scripts/seed.py</code>.</p>
     {% else %}
     <table>
         <thead>
@@ -24,10 +24,10 @@
             </tr>
         </thead>
         <tbody>
-            {% for u in doctor_users %}
+            {% for u in health_professional_users %}
             <tr>
                 <td>{{ u.email }}</td>
-                <td><a class="btn-link" href="/doctor/{{ u.access_token }}/tasks">Open Dataset Options</a></td>
+                <td><a class="btn-link" href="/health-professional/{{ u.access_token }}/tasks">Open Dataset Options</a></td>
             </tr>
             {% endfor %}
         </tbody>

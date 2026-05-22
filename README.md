@@ -1,10 +1,10 @@
-# Bilingual Doctor Annotation Prototype
+# Bilingual Health Professional Annotation Prototype
 
-Beginner-friendly prototype for collecting doctor annotations on translated medical conversations.
+Beginner-friendly prototype for collecting health professional annotations on translated medical conversations.
 
 ## Features
 - Admin upload of conversation CSV (`conversation_id,turn_id,speaker,english_text,chinese_text`)
-- Doctor workflow to edit Chinese translation and insert errors
+- Health Professional workflow to edit Chinese translation and insert errors
 - Autosave draft (debounced on edit, periodic autosave, blur save, and page-exit save)
 - Submit with required consent checkbox
 - Admin export of submitted-only records to CSV
@@ -68,10 +68,10 @@ scripts/    seed/import/export helper scripts
 - Example header:
   - `conversation_id,turn_id,speaker,english_text,chinese_text`
 - Example row:
-  - `conv_001,12,Doctor,How are you feeling today?,你今天感觉怎么样？`
+  - `conv_001,12,Health Professional,How are you feeling today?,你今天感觉怎么样？`
 
 ## UI Label To Field Mapping
-- The labels shown in the doctor workspace are UI text only. The underlying code/database fields are:
+- The labels shown in the health professional workspace are UI text only. The underlying code/database fields are:
   - `Original conversations` -> `english_text`
   - `Translated conversations` -> `chinese_text`
   - `Translated conversations with errors` -> usually `translated_text_edited`
@@ -99,27 +99,27 @@ scripts/    seed/import/export helper scripts
 - This app now uses direct access links instead of login/password.
 - After running `python scripts/seed.py`, terminal output includes:
   - admin link
-  - default doctor link
+  - default health professional link
 - `ACCESS_LINKS.md` is auto-updated when you run:
   - `python scripts/seed.py`
-  - `python scripts/create_doctor.py ...`
+  - `python scripts/create_health professional.py ...`
 - `http://127.0.0.1:8000/` no longer shows tokens for safety.
 - Admin links only work for admin routes.
-- Doctor links only work for doctor routes.
-- Each doctor should have a unique link/token.
+- Health Professional links only work for health professional routes.
+- Each health professional should have a unique link/token.
 - Current local links (updated on March 6, 2026):
   - Admin upload: `http://127.0.0.1:8000/admin/qzBUat4nehtQo1cUw84dOQ/upload`
-  - Doctor tasks: `http://127.0.0.1:8000/doctor/mq_Ca6spWMAXM41uezIf7w/tasks`
-  - Doctor error insertion page (conversation `5_12`): `http://127.0.0.1:8000/doctor/mq_Ca6spWMAXM41uezIf7w/annotate/5_12`
+  - Health Professional tasks: `http://127.0.0.1:8000/health-professional/mq_Ca6spWMAXM41uezIf7w/tasks`
+  - Health Professional error insertion page (conversation `5_12`): `http://127.0.0.1:8000/health-professional/mq_Ca6spWMAXM41uezIf7w/annotate/5_12`
   - If you reseed users or recreate DB data, these tokenized links may change.
 
-## Create Different Doctor Links
-- Create one or multiple doctor users (each gets a different link):
+## Create Different Health Professional Links
+- Create one or multiple health professional users (each gets a different link):
   ```powershell
-  .\.venv\Scripts\python scripts/create_doctor.py doc1@example.com doc2@example.com
+  .\.venv\Scripts\python scripts/create_health professional.py doc1@example.com doc2@example.com
   ```
-- Script output prints each doctor's private access link.
-- Share each doctor only their own link.
+- Script output prints each health professional's private access link.
+- Share each health professional only their own link.
 
 ## How To Use
 1. Open the admin access link.
@@ -127,34 +127,34 @@ scripts/    seed/import/export helper scripts
    - `conversation_id,turn_id,speaker,english_text,chinese_text`
 3. (Optional) Click `Clear Uploaded Data` in admin page to remove all currently uploaded conversations and related submissions/annotations.
 4. (Optional) Click `Clear Submitted Output` in admin page to remove only submitted outputs and related annotations (uploaded conversations are kept).
-5. (Optional) Click `Clear All Doctor Tasks` in admin page to remove all doctor submissions (draft + submitted) and annotations while keeping uploaded conversations.
-6. Open a doctor-specific access link.
+5. (Optional) Click `Clear All Health Professional Tasks` in admin page to remove all health professional submissions (draft + submitted) and annotations while keeping uploaded conversations.
+6. Open a health professional-specific access link.
 7. Select which uploaded dataset (CSV file) to work on.
 8. Review all turns in one page (ordered by `turn_id`) with three columns: `Original conversations`, `Translated conversations`, `Translated conversations with errors`.
 9. Edit text in the right-side `Translated conversations with errors` box for each turn.
 10. Drafts save automatically while editing, when a field loses focus, and when leaving the page; the page uses one `Submit All Conversations` button to upload all turns on the page.
-11. After a successful `Submit All Conversations`, the doctor workspace also saves a screenshot of the page for admin review.
-12. Return to admin link and export submitted-only CSV or download the saved workspace screenshot for that doctor and dataset.
+11. After a successful `Submit All Conversations`, the health professional workspace also saves a screenshot of the page for admin review.
+12. Return to admin link and export submitted-only CSV or download the saved workspace screenshot for that health professional and dataset.
 
 ## How To Test (Manual)
 1. Open admin link and upload a valid CSV.
-2. Open doctor link and open a task.
+2. Open health professional link and open a task.
 3. Edit text and confirm drafts are saved without submitting, including after blur or leaving and reopening the task page.
 4. Attempt submit without consent; verify it is blocked.
 5. Submit with consent; verify submitted status appears.
 6. Admin export should include submitted rows only, with a `turn_modified` column showing whether the exported `translated_text_edited` differs from that turn's baseline text.
 7. Create a draft-only task and verify it is excluded from export.
 8. Use `Discard Draft` on a draft task; verify edited text resets to baseline.
-9. After a successful full submission, confirm the admin page can download the saved workspace screenshot for that doctor and dataset.
+9. After a successful full submission, confirm the admin page can download the saved workspace screenshot for that health professional and dataset.
 
 ## CLI Helpers
 - Refresh `ACCESS_LINKS.md` manually:
   ```powershell
   .\.venv\Scripts\python scripts/sync_access_links_md.py
   ```
-- List doctor email-to-link mapping:
+- List health professional email-to-link mapping:
   ```powershell
-  .\.venv\Scripts\python scripts/list_doctor_links.py
+  .\.venv\Scripts\python scripts/list_health professional_links.py
   ```
 - Import CSV via script:
   ```powershell
@@ -165,22 +165,22 @@ scripts/    seed/import/export helper scripts
   .\.venv\Scripts\python scripts/export_csv.py output.csv
   ```
 
-## Remove Doctors Or Links
-- Remove a doctor account (and their submissions/annotations) by email:
+## Remove Health Professionals Or Links
+- Remove a health professional account (and their submissions/annotations) by email:
   ```powershell
-  .\.venv\Scripts\python -c "from backend.database import SessionLocal; from backend.models import User, Submission, Annotation; from sqlalchemy import select; email='doctor@example.com'; db=SessionLocal(); u=db.scalar(select(User).where(User.email==email, User.role=='doctor')); import sys; 
-  if not u: print('Doctor not found'); db.close(); sys.exit(0)
-  subs=db.scalars(select(Submission).where(Submission.doctor_id==u.id)).all()
+  .\.venv\Scripts\python -c "from backend.database import SessionLocal; from backend.models import User, Submission, Annotation; from sqlalchemy import select; email='health_professional@example.com'; db=SessionLocal(); u=db.scalar(select(User).where(User.email==email, User.role=='health_professional')); import sys; 
+  if not u: print('Health Professional not found'); db.close(); sys.exit(0)
+  subs=db.scalars(select(Submission).where(Submission.health_professional_id==u.id)).all()
   sub_ids=[s.id for s in subs]
   if sub_ids: db.query(Annotation).filter(Annotation.submission_id.in_(sub_ids)).delete(synchronize_session=False)
-  db.query(Submission).filter(Submission.doctor_id==u.id).delete(synchronize_session=False)
-  db.delete(u); db.commit(); db.close(); print(f'Removed doctor: {email}')"
+  db.query(Submission).filter(Submission.health_professional_id==u.id).delete(synchronize_session=False)
+  db.delete(u); db.commit(); db.close(); print(f'Removed health professional: {email}')"
   ```
-- Invalidate/rotate a doctor link only (keep the doctor account):
+- Invalidate/rotate a health professional link only (keep the health professional account):
   ```powershell
-  .\.venv\Scripts\python -c "import secrets; from backend.database import SessionLocal; from backend.models import User; from sqlalchemy import select; email='doctor@example.com'; db=SessionLocal(); u=db.scalar(select(User).where(User.email==email, User.role=='doctor')); import sys; 
-  if not u: print('Doctor not found'); db.close(); sys.exit(0)
-  u.access_token=secrets.token_urlsafe(16); db.commit(); print(f'New link: http://127.0.0.1:8000/doctor/{u.access_token}/tasks'); db.close()"
+  .\.venv\Scripts\python -c "import secrets; from backend.database import SessionLocal; from backend.models import User; from sqlalchemy import select; email='health_professional@example.com'; db=SessionLocal(); u=db.scalar(select(User).where(User.email==email, User.role=='health_professional')); import sys; 
+  if not u: print('Health Professional not found'); db.close(); sys.exit(0)
+  u.access_token=secrets.token_urlsafe(16); db.commit(); print(f'New link: http://127.0.0.1:8000/health-professional/{u.access_token}/tasks'); db.close()"
   ```
 - After either action, refresh the markdown registry:
   ```powershell

@@ -3,13 +3,19 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import Annotation, Conversation, Submission, User
+from .models import (
+    Annotation,
+    Conversation,
+    HealthProfessionalDatasetAssignment,
+    Submission,
+    User,
+)
 
 
-def get_or_create_submission(db: Session, doctor_id: int, conversation: Conversation) -> Submission:
+def get_or_create_submission(db: Session, health_professional_id: int, conversation: Conversation) -> Submission:
     submission = db.scalar(
         select(Submission).where(
-            Submission.doctor_id == doctor_id,
+            Submission.health_professional_id == health_professional_id,
             Submission.conversation_id == conversation.id,
         )
     )
@@ -17,7 +23,7 @@ def get_or_create_submission(db: Session, doctor_id: int, conversation: Conversa
         return submission
 
     submission = Submission(
-        doctor_id=doctor_id,
+        health_professional_id=health_professional_id,
         conversation_id=conversation.id,
         translated_text_edited=conversation.chinese_text,
         status="draft",
@@ -30,7 +36,12 @@ def get_or_create_submission(db: Session, doctor_id: int, conversation: Conversa
     return submission
 
 
-def upsert_conversations_from_rows(db: Session, rows: list[dict[str, str]], dataset_name: str) -> tuple[int, int]:
+def upsert_conversations_from_rows(
+    db: Session,
+    rows: list[dict[str, str]],
+    dataset_name: str,
+    source_filename: str = "",
+) -> tuple[int, int]:
     inserted = 0
     updated = 0
 
@@ -54,6 +65,7 @@ def upsert_conversations_from_rows(db: Session, rows: list[dict[str, str]], data
         conversation = db.get(Conversation, internal_id)
         if conversation:
             conversation.dataset_name = dataset_name
+            conversation.source_filename = source_filename or conversation.source_filename
             conversation.conversation_group_id = conversation_id
             conversation.turn_id = turn_id
             conversation.speaker = speaker
@@ -65,6 +77,7 @@ def upsert_conversations_from_rows(db: Session, rows: list[dict[str, str]], data
                 Conversation(
                     id=internal_id,
                     dataset_name=dataset_name,
+                    source_filename=source_filename,
                     conversation_group_id=conversation_id,
                     turn_id=turn_id,
                     speaker=speaker,
@@ -113,7 +126,7 @@ def clear_submitted_output(db: Session) -> dict[str, int]:
     }
 
 
-def clear_all_doctor_tasks(db: Session) -> dict[str, int]:
+def clear_all_health_professional_tasks(db: Session) -> dict[str, int]:
     submission_ids = db.scalars(select(Submission.id)).all()
     if not submission_ids:
         return {
@@ -132,16 +145,16 @@ def clear_all_doctor_tasks(db: Session) -> dict[str, int]:
     }
 
 
-def get_submitted_export_rows(db: Session, doctor_email: str | None = None) -> list[dict[str, str]]:
+def get_submitted_export_rows(db: Session, health_professional_email: str | None = None) -> list[dict[str, str]]:
     query = (
         select(Submission)
         .where(Submission.status == "submitted")
         .order_by(Submission.submitted_at.desc())
     )
     submissions = db.scalars(query).all()
-    if doctor_email:
-        normalized_email = doctor_email.strip().lower()
-        submissions = [s for s in submissions if (s.doctor.email or "").strip().lower() == normalized_email]
+    if health_professional_email:
+        normalized_email = health_professional_email.strip().lower()
+        submissions = [s for s in submissions if (s.health_professional.email or "").strip().lower() == normalized_email]
 
     rows: list[dict[str, str]] = []
     for submission in submissions:
@@ -155,7 +168,7 @@ def get_submitted_export_rows(db: Session, doctor_email: str | None = None) -> l
                 "conversation_id": submission.conversation.conversation_group_id or submission.conversation_id,
                 "turn_id": submission.conversation.turn_id,
                 "speaker": submission.conversation.speaker,
-                "doctor_email": submission.doctor.email,
+                "health_professional_email": submission.health_professional.email,
                 "english_text": submission.conversation.english_text,
                 "chinese_text": submission.conversation.chinese_text,
                 "translated_text_edited": submission.translated_text_edited,
@@ -179,7 +192,7 @@ def get_admin_metadata_rows(db: Session) -> list[dict[str, str]]:
             {
                 "dataset_name": submission.conversation.dataset_name,
                 "conversation_id": submission.conversation.conversation_group_id or submission.conversation_id,
-                "doctor_email": submission.doctor.email,
+                "health_professional_email": submission.health_professional.email,
                 "submitted_at": submission.submitted_at.isoformat() if submission.submitted_at else "",
                 "edited_text_length": str(len(submission.translated_text_edited or "")),
             }
@@ -187,17 +200,17 @@ def get_admin_metadata_rows(db: Session) -> list[dict[str, str]]:
     return rows
 
 
-def get_doctor_progress_rows(db: Session) -> list[dict[str, str]]:
+def get_health_professional_progress_rows(db: Session) -> list[dict[str, str]]:
     conversations = db.scalars(select(Conversation)).all()
-    doctors = db.scalars(select(User).where(User.role == "doctor").order_by(User.email.asc())).all()
+    health_professionals = db.scalars(select(User).where(User.role == "health_professional").order_by(User.email.asc())).all()
     dataset_to_conversation_ids: dict[str, set[str]] = {}
     for conversation in conversations:
         dataset_name = (conversation.dataset_name or "default").strip() or "default"
         dataset_to_conversation_ids.setdefault(dataset_name, set()).add(conversation.id)
 
     rows: list[dict[str, str]] = []
-    for doctor in doctors:
-        submissions = db.scalars(select(Submission).where(Submission.doctor_id == doctor.id)).all()
+    for health_professional in health_professionals:
+        submissions = db.scalars(select(Submission).where(Submission.health_professional_id == health_professional.id)).all()
         submitted_conversation_ids = {s.conversation_id for s in submissions if s.status == "submitted"}
         submitted_count = sum(
             1 for conversation_ids in dataset_to_conversation_ids.values()
@@ -212,7 +225,7 @@ def get_doctor_progress_rows(db: Session) -> list[dict[str, str]]:
 
         rows.append(
             {
-                "doctor_email": doctor.email,
+                "health_professional_email": health_professional.email,
                 "total_conversations": str(total_conversations),
                 "submitted_count": str(submitted_count),
                 "draft_count": str(draft_count),
@@ -223,7 +236,7 @@ def get_doctor_progress_rows(db: Session) -> list[dict[str, str]]:
     return rows
 
 
-def get_doctor_dataset_export_rows(db: Session) -> list[dict[str, str]]:
+def get_health_professional_dataset_export_rows(db: Session) -> list[dict[str, str]]:
     submissions = db.scalars(
         select(Submission)
         .where(Submission.status == "submitted")
@@ -232,16 +245,16 @@ def get_doctor_dataset_export_rows(db: Session) -> list[dict[str, str]]:
 
     grouped: dict[tuple[str, str], dict[str, str]] = {}
     for submission in submissions:
-        doctor_email = submission.doctor.email
+        health_professional_email = submission.health_professional.email
         dataset_name = submission.conversation.dataset_name
-        key = (doctor_email, dataset_name)
+        key = (health_professional_email, dataset_name)
         baseline_text = submission.conversation.english_text if (
             (submission.conversation.speaker or "").strip().lower() in {"patient"}
         ) else submission.conversation.chinese_text
         is_modified = (submission.translated_text_edited or "") != (baseline_text or "")
         if key not in grouped:
             grouped[key] = {
-                "doctor_email": doctor_email,
+                "health_professional_email": health_professional_email,
                 "dataset_name": dataset_name,
                 "submitted_count": "0",
                 "modified_count": "0",
@@ -255,5 +268,97 @@ def get_doctor_dataset_export_rows(db: Session) -> list[dict[str, str]]:
             grouped[key]["last_submitted_at"] = submitted_at
 
     rows = list(grouped.values())
-    rows.sort(key=lambda row: ((row["doctor_email"] or "").lower(), (row["dataset_name"] or "").lower()))
+    rows.sort(key=lambda row: ((row["health_professional_email"] or "").lower(), (row["dataset_name"] or "").lower()))
     return rows
+
+
+def get_uploaded_dataset_rows(db: Session) -> list[dict[str, str]]:
+    conversations = db.scalars(select(Conversation)).all()
+    assignments = db.scalars(select(HealthProfessionalDatasetAssignment)).all()
+    user_by_id = {
+        user.id: user
+        for user in db.scalars(select(User).where(User.role == "health_professional")).all()
+    }
+    grouped: dict[str, dict[str, str]] = {}
+    for conversation in conversations:
+        dataset_name = (conversation.dataset_name or "default").strip() or "default"
+        source_filename = (conversation.source_filename or "").strip()
+        row = grouped.setdefault(
+            dataset_name,
+            {
+                "dataset_name": dataset_name,
+                "source_filename": source_filename,
+                "turn_count": "0",
+            },
+        )
+        row["turn_count"] = str(int(row["turn_count"]) + 1)
+        if source_filename and not row["source_filename"]:
+            row["source_filename"] = source_filename
+
+    assigned_by_dataset: dict[str, list[str]] = {}
+    for assignment in assignments:
+        dataset_name = (assignment.dataset_name or "").strip()
+        if not dataset_name:
+            continue
+        user = user_by_id.get(assignment.health_professional_id)
+        if not user:
+            continue
+        label_name = (user.name or "").strip()
+        label = f"{label_name} ({user.email})" if label_name else user.email
+        assigned_by_dataset.setdefault(dataset_name, [])
+        if label not in assigned_by_dataset[dataset_name]:
+            assigned_by_dataset[dataset_name].append(label)
+
+    for dataset_name, row in grouped.items():
+        assignees = assigned_by_dataset.get(dataset_name, [])
+        assignees.sort(key=str.lower)
+        row["assigned_to"] = ", ".join(assignees)
+
+    rows = list(grouped.values())
+    rows.sort(key=lambda row: (row["dataset_name"] or "").lower())
+    return rows
+
+
+def delete_dataset_by_name(db: Session, dataset_name: str) -> dict[str, int]:
+    normalized = (dataset_name or "").strip()
+    if not normalized:
+        return {
+            "conversations_deleted": 0,
+            "submissions_deleted": 0,
+            "annotations_deleted": 0,
+        }
+
+    conversation_ids = db.scalars(
+        select(Conversation.id).where(Conversation.dataset_name == normalized)
+    ).all()
+    if not conversation_ids:
+        return {
+            "conversations_deleted": 0,
+            "submissions_deleted": 0,
+            "annotations_deleted": 0,
+        }
+
+    submission_ids = db.scalars(
+        select(Submission.id).where(Submission.conversation_id.in_(conversation_ids))
+    ).all()
+
+    annotations_deleted = 0
+    if submission_ids:
+        annotations_deleted = db.query(Annotation).filter(
+            Annotation.submission_id.in_(submission_ids)
+        ).delete(synchronize_session=False)
+
+    submissions_deleted = db.query(Submission).filter(
+        Submission.conversation_id.in_(conversation_ids)
+    ).delete(synchronize_session=False)
+
+    conversations_deleted = db.query(Conversation).filter(
+        Conversation.id.in_(conversation_ids)
+    ).delete(synchronize_session=False)
+
+    db.commit()
+    return {
+        "conversations_deleted": int(conversations_deleted or 0),
+        "submissions_deleted": int(submissions_deleted or 0),
+        "annotations_deleted": int(annotations_deleted or 0),
+    }

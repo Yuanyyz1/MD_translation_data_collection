@@ -1,0 +1,14 @@
+﻿conversation_id,turn_id,speaker,english_text,chinese_text
+3,1,Pharmacist,"Hi, my name is Brad, one of the pharmacists here. Can I confirm your full name and date of birth? ",你好，我叫 Brad，是这里的药剂师之一。我可以确认一下你的全名和出生日期吗？
+3,2,Patient,"I am Lim, DOB is 08/05/1980. ",我是 Lim，出生日期是 08/05/1980。
+3,3,Pharmacist,"Thanks, Lim. Do you have your Medicare card with you? And do you have a concession card or Safety Net card? ",谢谢你，Lim。你有随身带着医保卡（Medicare card）吗？还有优惠卡（concession card）或 医疗保障安全网卡 (Safety Net card) 吗
+3,4,Patient,"Yes, I have them with me. ",有的，我都带在身上。
+3,5,Pharmacist,"Great. I can see your script is for doxycycline. Your prescription allows brand substitution, so we can dispense a generic brand today. Generics have the same active ingredient and effect as the original brand; they just look different and often cost less. Are you happy to go with the lower cost generic? ",好的。我看到你这次的处方是 doxycycline。你的处方允许更换品牌，所以我们今天可以配发仿制品牌。仿制药的有效成分和疗效与原厂药完全一样，只是外观可能不同，而且通常更便宜。你愿意选择价格较低的仿制药吗？
+3,6,Patient,"If it’s the same, yes. How much will it be? ",如果是一样的，那可以。多少钱呢？
+3,7,Pharmacist,"Under the PBS, the most you will pay per script is the current PBS co payment. For general patients it’s up to the capped amount and for concession it’s up to the concessional cap; the exact price can be lower depending on brand and pharmacy discounts. If you choose a brand that has a brand premium (some original brands do), that premium is extra on top and doesn’t count toward your Safety Net. The generic I am offering is premium free, so you avoid that extra charge. ",在药品福利计划下，你每张处方最多只需要支付当前的药品福利计划规定的自付额。对于普通患者，是支付到上限金额；对于持优惠卡的患者，则是支付到优惠上限。具体金额可能会更低，取决于药品品牌和药房折扣。如果你选择的品牌有品牌附加费（有些原厂药会有），那部分费用需要额外支付，而且不计入医疗保障安全网。我提供给你的这个仿制品牌是没有品牌附加费的，所以你就不会多付这笔额外费用。
+3,8,Patient,What’s the Safety Net again? ,医疗保障安全网是什么来着
+3,9,Pharmacist,"The PBS Safety Net is a yearly cap on what you spend on PBS medicines. Once your PBS spend reaches the threshold, your scripts get cheaper for the rest of the calendar year. Even after you reach the Safety Net, any brand premiums still apply, so sticking with premium free brands helps keep costs down. ",每年药物福利计划可以帮你支付的药物的费用是取决于个人医疗保障安全网的上限。当你今年在药物福利计划药品上的花费达到这个门槛后，在接下来这一整年的处方费用都会变得更便宜。不过，即使达到了医疗保障安全网的额度，品牌附加费仍然要另外支付。所以选择没有附加费的品牌可以帮你继续节省费用
+3,10,Patient,Anything else I can do to save? ,还有什么我可以做来节省费用吗？
+3,11,Pharmacist,"Ask your prescriber about 60 day prescriptions for chronic, stable conditions (where eligible). You get twice the medicine for one co payment, which halves your visits and cost per day. ",如果你的病情是慢性且稳定（并符合资格），你可以问问开药的医生是否能开 60 天用量的处方。这样你只需支付一次自付额就能拿到两倍的药量，相当于将你的取药次数和每日费用都减半。
+3,12,Pharmacist,Stay with one pharmacy (or one pharmacy group) so we can track your Safety Net accurately and warn you when you are close. ,尽量长期在同一家药房（或同一连锁药房）取药，这样我们就能准确记录你的医疗保障安全网额度的累积，并在你接近门槛时提醒你。
+3,13,Patient,Sounds good - let’s do the generic. ,听起来不错——那我们就选择仿制药吧。

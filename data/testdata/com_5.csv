@@ -1,0 +1,13 @@
+﻿conversation_id,turn_id,speaker,english_text,chinese_text
+1,1,Pharmacist,"Hello, my name’s Corey, I’m one of the pharmacists here. Can I confirm your full name and DOB? ",您好，我叫 Corey，是这里的药剂师之一。请问您的全名和出生日期是？
+1,2,Patient,"My name is Kaiyu, and my DOB is 29/04/1997",我的名字叫kaiyu，我的出生日期是1997年4月29日。
+1,3,Pharmacist,Thank you Kaiyu. And is now a good time to run through your medicine before you go home?,谢谢你，Kaiyu。现在方便在你回家前一起复查一下你目前的所有药物吗?
+1,4,Patient,"Yes, that’s fine. ",好的，可以。
+1,5,Pharmacist,"Great. Before we start, can I just check, do you have any allergies or bad reactions to medicines?",很好。在我们开始之前，我想先确认一下：你有没有对药物过敏，或者以前用药时有过不良反应？
+1,6,Patient,"No, none that I know of.",没有，据我所知没有。
+1,7,Pharmacist,Okay. The doctor has prescribed you an antibiotic called amoxicillin with clavulanic acid. A common brand of this medicine is Augmentin Duo Forte. It’s used to treat the bacterial infection in your appendix.,好的。医生给你开了一种名为阿莫西林配克拉维酸的抗生素，常见的商品名是 Augmentin Duo Forte。这种药是用来治疗你阑尾里的细菌感染的。
+1,8,Pharmacist,"The dose is one tablet every morning and night for 7 days. It is best taken with food to help with absorption and reduce stomach upset. For example, you can take it with breakfast and dinner to make it easier to remember. ",剂量是早晚各一片，共服用 7 天。最好随餐服用，这样有助于吸收，也能减少胃部不适。比如，你可以在早餐和晚餐时一起吃药，这样也更容易记住。
+1,9,Pharmacist,"Most people don’t have any major side-effects, but some may get loose bowels (or diarrhoea), or a bit of nausea or stomach upset. But these are usually mild. ",大多数人不会出现严重的副作用，但有些人可能会出现大便稀（或腹泻）、轻微的恶心或胃部不适。不过这些通常都比较轻微。
+1,10,Pharmacist,"If you notice any skin rash, swelling or difficulty breathing, stop the medicine and see your doctor or come to hospital straight away because this could be an allergy.  ",如果你发现自己起了皮疹、出现肿胀，或者有呼吸困难的情况，请立刻停药，并马上去看医生或直接来医院，因为这可能是过敏反应。
+1,11,Pharmacist,"It’s important you finish the full course, even if you’re feeling better, so the infection goes away properly. ",即使你感觉好转了，也一定要把整个疗程的药吃完，这样才能把感染彻底治好
+1,12,Pharmacist,"Please see your doctor if: Your pain or symptoms get worse, you get severe diarrhoea (especially if watery or bloody), or if you have any side effects that worry you. That’s the main information. Do you have any questions about taking this antibiotic? ",如果出现以下情况，请去看医生：你的疼痛或症状加重、出现严重腹泻（尤其是水样或带血的腹泻）、或者有任何让你感到担心的副作用。以上就是主要的信息。关于这个抗生素的使用，你有什么问题吗？

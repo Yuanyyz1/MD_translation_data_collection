@@ -10,12 +10,19 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    professional_role: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     access_token: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False, default="")
-    role: Mapped[str] = mapped_column(String(20), nullable=False)  # admin or doctor
+    role: Mapped[str] = mapped_column(String(20), nullable=False)  # admin or health_professional
 
-    submissions: Mapped[list["Submission"]] = relationship("Submission", back_populates="doctor")
+    submissions: Mapped[list["Submission"]] = relationship("Submission", back_populates="health_professional")
+    dataset_assignments: Mapped[list["HealthProfessionalDatasetAssignment"]] = relationship(
+        "HealthProfessionalDatasetAssignment",
+        back_populates="health_professional",
+        cascade="all, delete-orphan",
+    )
 
 
 class Conversation(Base):
@@ -23,6 +30,7 @@ class Conversation(Base):
 
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
     dataset_name: Mapped[str] = mapped_column(String(255), nullable=False, default="default")
+    source_filename: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     conversation_group_id: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     turn_id: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     speaker: Mapped[str] = mapped_column(String(100), nullable=False, default="")
@@ -35,18 +43,18 @@ class Conversation(Base):
 
 class Submission(Base):
     __tablename__ = "submissions"
-    __table_args__ = (UniqueConstraint("doctor_id", "conversation_id", name="uq_submission_doctor_conversation"),)
+    __table_args__ = (UniqueConstraint("health_professional_id", "conversation_id", name="uq_submission_health_professional_conversation"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     conversation_id: Mapped[str] = mapped_column(String(100), ForeignKey("conversations.id"), nullable=False, index=True)
-    doctor_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    health_professional_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     translated_text_edited: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False)
     last_saved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     consent_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    doctor: Mapped[User] = relationship("User", back_populates="submissions")
+    health_professional: Mapped[User] = relationship("User", back_populates="submissions")
     conversation: Mapped[Conversation] = relationship("Conversation", back_populates="submissions")
     annotations: Mapped[list["Annotation"]] = relationship(
         "Annotation", back_populates="submission", cascade="all, delete-orphan"
@@ -70,3 +78,20 @@ class Annotation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     submission: Mapped[Submission] = relationship("Submission", back_populates="annotations")
+
+
+class HealthProfessionalDatasetAssignment(Base):
+    __tablename__ = "health_professional_dataset_assignments"
+    __table_args__ = (
+        UniqueConstraint("health_professional_id", "slot", name="uq_hp_dataset_assignment_slot"),
+        UniqueConstraint("health_professional_id", "dataset_name", name="uq_hp_dataset_assignment_dataset"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    health_professional_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False, index=True
+    )
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)  # 1 or 2
+    dataset_name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    health_professional: Mapped[User] = relationship("User", back_populates="dataset_assignments")

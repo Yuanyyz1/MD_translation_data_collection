@@ -31,7 +31,7 @@ def main() -> None:
                 "conversation_id",
                 "turn_id",
                 "speaker",
-                "doctor_email",
+                "health_professional_email",
                 "english_text",
                 "chinese_text",
                 "translated_text_edited",

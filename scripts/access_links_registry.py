@@ -33,8 +33,8 @@ def write_access_links_markdown() -> Path:
         for user in users:
             if user.role == "admin":
                 link = f"{BASE_URL}/admin/{user.access_token}/upload"
-            elif user.role == "doctor":
-                link = f"{BASE_URL}/doctor/{user.access_token}/tasks"
+            elif user.role == "health_professional":
+                link = f"{BASE_URL}/health-professional/{user.access_token}/tasks"
             else:
                 link = "(unsupported role)"
             lines.append(f"| {user.role} | {user.email} | `{link}` |")

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="card">
-    <h2>Admin CSV Upload</h2>
+    <h2 class="admin-section-title">Admin CSV Upload</h2>
     <p>Required CSV headers: <code>conversation_id,turn_id,speaker,english_text,chinese_text</code></p>
 
     {% if message %}
@@ -22,15 +22,64 @@
     </form>
 
     <hr />
+    <h3 class="admin-section-title">Current Uploaded Datasets</h3>
+    {% if uploaded_dataset_rows|length == 0 %}
+        <p>No datasets uploaded yet.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Original File Name</th>
+                    <th>Name In Application</th>
+                    <th>Turn Count</th>
+                    <th>Assigned To</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in uploaded_dataset_rows %}
+                <tr>
+                    <td>{{ row.source_filename if row.source_filename else "-" }}</td>
+                    <td>{{ row.dataset_name }}</td>
+                    <td>{{ row.turn_count }}</td>
+                    <td>{{ row.assigned_to if row.assigned_to else "-" }}</td>
+                    <td>
+                        <form method="post" action="/admin/{{ access_token }}/delete-dataset" onsubmit="return confirm('Delete this dataset and all related submissions/annotations? This cannot be undone.');">
+                            <input type="hidden" name="dataset_name" value="{{ row.dataset_name }}" />
+                            <button type="submit" class="secondary">Delete Dataset</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 
-    <h3>Cleanup Uploaded Data</h3>
-    <p>This permanently removes all conversations and related doctor submissions/annotations from the database.</p>
+    <hr />
+    <h3 class="admin-section-title">Create Health Professional Link</h3>
+    <form method="post" action="/admin/{{ access_token }}/create-health-professional" class="form-grid">
+        <label>Health Professional Name
+            <input type="text" name="health_professional_name" placeholder="e.g. Alice Smith" required />
+        </label>
+        <label>Professional Role
+            <input type="text" name="health_professional_role" placeholder="e.g. Nurse, Doctor, Pharmacist" required />
+        </label>
+        <label>Health Professional Email
+            <input type="email" name="health_professional_email" placeholder="e.g. clinician@example.com" required />
+        </label>
+        <button type="submit">Create Health Professional Link</button>
+    </form>
+
+    <hr />
+
+    <h3 class="admin-section-title">Cleanup Uploaded Data</h3>
+    <p>This permanently removes all conversations and related health professional submissions/annotations from the database.</p>
     <form method="post" action="/admin/{{ access_token }}/clear" onsubmit="return confirm('This will delete all uploaded conversations and related submissions/annotations. Continue?');">
         <button type="submit">Clear Uploaded Data</button>
     </form>
-    <p>Need to reset doctor work only? This removes all doctor submissions (draft + submitted) and annotations, but keeps uploaded conversations.</p>
-    <form method="post" action="/admin/{{ access_token }}/clear-doctor-tasks" onsubmit="return confirm('This will delete ALL doctor submissions (draft and submitted) and annotations. Uploaded conversations will be kept. Continue?');">
-        <button type="submit">Clear All Doctor Tasks</button>
+    <p>Need to reset health professional work only? This removes all health professional submissions (draft + submitted) and annotations, but keeps uploaded conversations.</p>
+    <form method="post" action="/admin/{{ access_token }}/clear-health-professional-tasks" onsubmit="return confirm('This will delete ALL health professional submissions (draft and submitted) and annotations. Uploaded conversations will be kept. Continue?');">
+        <button type="submit">Clear All Health Professional Tasks</button>
     </form>
 
     <hr />
@@ -42,38 +91,84 @@
 </section>
 
 <section class="card">
-    <h3>Current Work Progress By Doctor (Metadata)</h3>
-    {% if doctor_progress_rows|length == 0 %}
-        <p>No doctor users found.</p>
+    <h3>Health Professional Access Links And Progress</h3>
+    {% if health_professional_link_rows|length == 0 %}
+        <p>No health professional users found yet.</p>
     {% else %}
-        <table>
+        <div class="hp-progress-table-wrap">
+        <table class="hp-progress-table">
             <thead>
                 <tr>
-                    <th>Doctor</th>
-                    <th>Submitted datasets</th>
+                    <th>Name</th>
+                    <th>Professional Role</th>
+                    <th>Health Professional Email</th>
+                    <th>Submitted Datasets</th>
+                    <th>Access Link</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for row in doctor_progress_rows %}
+                {% for row in health_professional_link_rows %}
                 <tr>
-                    <td>{{ row.doctor_email }}</td>
-                    <td>{{ row.submitted_count }}</td>
+                    <td>{{ row.health_professional_name if row.health_professional_name else "-" }}</td>
+                    <td>{{ row.health_professional_role if row.health_professional_role else "-" }}</td>
+                    <td>{{ row.health_professional_email }}</td>
+                    <td>
+                        {% if row.submitted_dataset_details|length == 0 %}
+                            -
+                        {% else %}
+                            {% for item in row.submitted_dataset_details %}
+                                <div>
+                                    <strong>{{ item.dataset_name }}</strong>:
+                                    {{ item.submitted_turns }}/{{ item.total_turns }} turns,
+                                    {% if item.completed %}Submitted{% else %}Not submitted{% endif %}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="btn-link" href="{{ row.link_path }}">Open</a>
+                        <div><code>{{ row.link_full }}</code></div>
+                    </td>
+                    <td>
+                        <form method="post" action="/admin/{{ access_token }}/assign-health-professional-datasets" class="form-grid">
+                            <input type="hidden" name="health_professional_email" value="{{ row.health_professional_email }}" />
+                            <select name="dataset_name_1" required>
+                                <option value="" {% if not row.assigned_dataset_1 %}selected{% endif %}>Select dataset 1</option>
+                                {% for dataset_name in available_dataset_names %}
+                                    <option value="{{ dataset_name }}" {% if row.assigned_dataset_1 == dataset_name %}selected{% endif %}>{{ dataset_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="dataset_name_2" required>
+                                <option value="" {% if not row.assigned_dataset_2 %}selected{% endif %}>Select dataset 2</option>
+                                {% for dataset_name in available_dataset_names %}
+                                    <option value="{{ dataset_name }}" {% if row.assigned_dataset_2 == dataset_name %}selected{% endif %}>{{ dataset_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit">Save Datasets</button>
+                        </form>
+                        <form method="post" action="/admin/{{ access_token }}/delete-health-professional" onsubmit="return confirm('Delete this health professional account, link, and all their submitted/draft data? This cannot be undone.');">
+                            <input type="hidden" name="health_professional_email" value="{{ row.health_professional_email }}" />
+                            <button type="submit" class="secondary">Delete User</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% endif %}
 </section>
 
 <section class="card">
-    <h3>Download Submitted Data By Doctor And Dataset</h3>
-    {% if doctor_dataset_export_rows|length == 0 %}
+    <h3>Download Submitted Data By Health Professional And Dataset</h3>
+    {% if health_professional_dataset_export_rows|length == 0 %}
         <p>No submitted datasets available yet.</p>
     {% else %}
         <table>
             <thead>
                 <tr>
-                    <th>Doctor</th>
+                    <th>Health Professional</th>
                     <th>Dataset</th>
                     <th>Modified Turns</th>
                     <th>Last Submitted At</th>
@@ -82,14 +177,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% for row in doctor_dataset_export_rows %}
+                {% for row in health_professional_dataset_export_rows %}
                 <tr>
-                    <td>{{ row.doctor_email }}</td>
+                    <td>{{ row.health_professional_email }}</td>
                     <td>{{ row.dataset_name }}</td>
                     <td>{{ row.modified_count }}/{{ row.submitted_count }}</td>
                     <td>{{ row.last_submitted_at }}</td>
-                    <td><a class="btn-link" href="/admin/{{ access_token }}/export-by-doctor-dataset?doctor_email={{ row.doctor_email | urlencode }}&dataset_name={{ row.dataset_name | urlencode }}">Download CSV</a></td>
-                    <td><a class="btn-link" href="/admin/{{ access_token }}/workspace-screenshot?doctor_email={{ row.doctor_email | urlencode }}&dataset_name={{ row.dataset_name | urlencode }}">Download Screenshot</a></td>
+                    <td><a class="btn-link" href="/admin/{{ access_token }}/export-by-health-professional-dataset?health_professional_email={{ row.health_professional_email | urlencode }}&dataset_name={{ row.dataset_name | urlencode }}">Download CSV</a></td>
+                    <td><a class="btn-link" href="/admin/{{ access_token }}/workspace-screenshot?health_professional_email={{ row.health_professional_email | urlencode }}&dataset_name={{ row.dataset_name | urlencode }}">Download Screenshot</a></td>
                 </tr>
                 {% endfor %}
             </tbody>

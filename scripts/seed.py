@@ -15,7 +15,7 @@ from scripts.access_links_registry import write_access_links_markdown
 
 
 ADMIN_EMAIL = "admin@example.com"
-DOCTOR_EMAIL = "doctor@example.com"
+HEALTH_PROFESSIONAL_EMAIL = "health_professional@example.com"
 PLACEHOLDER_PASSWORD = "link-only-auth-disabled"
 
 
@@ -44,20 +44,20 @@ def upsert_user(email: str, role: str) -> None:
 def main() -> None:
     Base.metadata.create_all(bind=engine)
     upsert_user(ADMIN_EMAIL, "admin")
-    upsert_user(DOCTOR_EMAIL, "doctor")
+    upsert_user(HEALTH_PROFESSIONAL_EMAIL, "health_professional")
 
     db = SessionLocal()
     try:
         admin = db.scalar(select(User).where(User.email == ADMIN_EMAIL))
-        doctor = db.scalar(select(User).where(User.email == DOCTOR_EMAIL))
+        health_professional = db.scalar(select(User).where(User.email == HEALTH_PROFESSIONAL_EMAIL))
     finally:
         db.close()
 
     print("Seed complete.")
     if admin:
         print(f"Admin link: http://127.0.0.1:8000/admin/{admin.access_token}/upload")
-    if doctor:
-        print(f"Doctor link: http://127.0.0.1:8000/doctor/{doctor.access_token}/tasks")
+    if health_professional:
+        print(f"Health Professional link: http://127.0.0.1:8000/health-professional/{health_professional.access_token}/tasks")
     output_path = write_access_links_markdown()
     print(f"Access registry updated: {output_path}")
     print("You can also open http://127.0.0.1:8000/ to view all local access links.")

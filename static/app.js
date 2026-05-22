@@ -3,7 +3,7 @@
   if (!page) return;
 
   const conversationId = page.dataset.conversationId;
-  const doctorBasePath = page.dataset.doctorBasePath || '/doctor';
+  const health_professionalBasePath = page.dataset.health_professionalBasePath || '/health-professional';
   const editedText = document.getElementById('edited-text');
   const autosaveStatus = document.getElementById('autosave-status');
   const submitStatus = document.getElementById('submit-status');
@@ -332,7 +332,7 @@
     if (isSubmitted) return;
     setSaving();
     try {
-      const data = await postJson(`${doctorBasePath}/submission/${conversationId}/save-draft`, {
+      const data = await postJson(`${health_professionalBasePath}/submission/${conversationId}/save-draft`, {
         translated_text_edited: editedText.value,
       });
       lastSavedValue = editedText.value;
@@ -381,14 +381,14 @@
     }
 
     try {
-      const data = await postJson(`${doctorBasePath}/submission/${conversationId}/submit`, {
+      const data = await postJson(`${health_professionalBasePath}/submission/${conversationId}/submit`, {
         consent_confirmed: true,
       });
       submitStatus.textContent = `Current status: ${data.status} (submitted at ${data.submitted_at})`;
       autosaveStatus.textContent = 'Submission complete';
       alert(`Submission successful ??\nSubmitted at ${data.submitted_at}`);
       lockSubmittedUi();
-      window.location.href = `${doctorBasePath}/tasks`;
+      window.location.href = `${health_professionalBasePath}/tasks`;
     } catch (err) {
       alert(`Submit failed: ${err.message}`);
     }
@@ -399,7 +399,7 @@
     if (!ok) return;
 
     try {
-      const data = await postJson(`${doctorBasePath}/submission/${conversationId}/discard`, {});
+      const data = await postJson(`${health_professionalBasePath}/submission/${conversationId}/discard`, {});
       editedText.value = data.translated_text_edited;
       lastSavedValue = editedText.value;
       submitStatus.textContent = `Current status: ${data.status}`;
@@ -418,7 +418,7 @@
   window.addEventListener('pagehide', function () {
     if (isSubmitted) return;
     if (editedText.value === lastSavedValue) return;
-    postJsonBeacon(`${doctorBasePath}/submission/${conversationId}/save-draft`, {
+    postJsonBeacon(`${health_professionalBasePath}/submission/${conversationId}/save-draft`, {
       translated_text_edited: editedText.value,
     });
   });

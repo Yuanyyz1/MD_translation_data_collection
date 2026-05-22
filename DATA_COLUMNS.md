@@ -8,7 +8,7 @@ The admin upload CSV must include these columns exactly:
 |---|---|---|
 | `conversation_id` | Yes | Conversation/group identifier. Multiple rows can share the same value. |
 | `turn_id` | Yes | Turn identifier within a conversation. |
-| `speaker` | Yes | Speaker label for the turn, for example `Doctor` or `Patient`. |
+| `speaker` | Yes | Speaker label for the turn, for example `Health Professional` or `Patient`. |
 | `english_text` | Yes | English source text for the turn. |
 | `chinese_text` | Yes | Chinese translated text for the turn. |
 
@@ -22,7 +22,7 @@ The submitted export CSV includes these columns:
 | `conversation_id` | Conversation/group identifier. |
 | `turn_id` | Turn identifier within the conversation. |
 | `speaker` | Speaker label for the turn. |
-| `doctor_email` | Doctor account email for the submitted row. |
+| `health_professional_email` | Health Professional account email for the submitted row. |
 | `english_text` | English source text. |
 | `chinese_text` | Chinese translated text. |
 | `translated_text_edited` | Final submitted text from `Translated conversations with errors`. |

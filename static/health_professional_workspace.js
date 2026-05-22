@@ -2,7 +2,7 @@
   const workspace = document.querySelector('.health_professional-workspace');
   if (!workspace) return;
 
-  const health_professionalBasePath = workspace.dataset.health_professionalBasePath || '/health_professional';
+  const health_professionalBasePath = workspace.dataset.health_professionalBasePath || '/health-professional';
   const datasetName = workspace.dataset.datasetName || '';
   const workspaceCaptureRoot = document.querySelector('.workspace-capture-root');
   const workspaceBackLink = document.querySelector('.workspace-back-link');
