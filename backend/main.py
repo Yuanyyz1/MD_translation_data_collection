@@ -29,7 +29,7 @@ from .crud import (
     upsert_conversations_from_rows,
 )
 from .database import Base, engine, get_db
-from .models import Annotation, Conversation, Submission, User
+from .models import Annotation, Conversation, Submission, User, WorkspaceScreenshot
 from .models import HealthProfessionalDatasetAssignment
 from .schemas import AnnotationCreateRequest, SaveDraftRequest, SubmitRequest, WorkspaceScreenshotUploadRequest
 
@@ -268,6 +268,9 @@ def delete_health_professional_related_data(db: Session, user: User) -> dict[str
     submissions_deleted = db.query(Submission).filter(
         Submission.health_professional_id == user.id
     ).delete(synchronize_session=False)
+    db.query(WorkspaceScreenshot).filter(
+        WorkspaceScreenshot.health_professional_id == user.id
+    ).delete(synchronize_session=False)
 
     db.delete(user)
     db.commit()
@@ -472,8 +475,33 @@ def upload_workspace_screenshot(
     if not image_bytes:
         return JSONResponse({"ok": False, "error": "Screenshot image is empty."}, status_code=400)
 
+    screenshot = db.scalar(
+        select(WorkspaceScreenshot).where(
+            WorkspaceScreenshot.health_professional_id == current_user.id,
+            WorkspaceScreenshot.dataset_name == dataset_name,
+        )
+    )
+    now = datetime.utcnow()
+    if screenshot:
+        screenshot.image_bytes = image_bytes
+        screenshot.updated_at = now
+    else:
+        screenshot = WorkspaceScreenshot(
+            health_professional_id=current_user.id,
+            dataset_name=dataset_name,
+            image_bytes=image_bytes,
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(screenshot)
+    db.commit()
+
+    # Keep local fallback for dev compatibility.
     output_path = get_workspace_screenshot_path(current_user.id, dataset_name)
-    output_path.write_bytes(image_bytes)
+    try:
+        output_path.write_bytes(image_bytes)
+    except OSError:
+        pass
     return {"ok": True, "filename": output_path.name}
 
 
@@ -908,14 +936,26 @@ def admin_download_workspace_screenshot(
     if not health_professional:
         raise HTTPException(status_code=404, detail="Health Professional not found")
 
-    screenshot_path = get_workspace_screenshot_path(health_professional.id, dataset_name)
-    if not screenshot_path.exists():
-        raise HTTPException(status_code=404, detail="Workspace screenshot not found")
-
     safe_email = slugify_filename_part(normalized_email)
     safe_dataset = slugify_filename_part(dataset_name)
     filename = f"workspace_screenshot_{safe_email}_{safe_dataset}.png"
-    return FileResponse(str(screenshot_path), media_type="image/png", filename=filename)
+
+    screenshot = db.scalar(
+        select(WorkspaceScreenshot).where(
+            WorkspaceScreenshot.health_professional_id == health_professional.id,
+            WorkspaceScreenshot.dataset_name == dataset_name,
+        )
+    )
+    if screenshot and screenshot.image_bytes:
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        return StreamingResponse(iter([screenshot.image_bytes]), media_type="image/png", headers=headers)
+
+    # Backward-compatible fallback for older file-based screenshots.
+    screenshot_path = get_workspace_screenshot_path(health_professional.id, dataset_name)
+    if screenshot_path.exists():
+        return FileResponse(str(screenshot_path), media_type="image/png", filename=filename)
+
+    raise HTTPException(status_code=404, detail="Workspace screenshot not found")
 
 
 @app.post("/admin/{token}/upload")

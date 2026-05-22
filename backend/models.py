@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -95,3 +95,23 @@ class HealthProfessionalDatasetAssignment(Base):
     dataset_name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     health_professional: Mapped[User] = relationship("User", back_populates="dataset_assignments")
+
+
+class WorkspaceScreenshot(Base):
+    __tablename__ = "workspace_screenshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "health_professional_id",
+            "dataset_name",
+            name="uq_workspace_screenshot_hp_dataset",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    health_professional_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False, index=True
+    )
+    dataset_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    image_bytes: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
