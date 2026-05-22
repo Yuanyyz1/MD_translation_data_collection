@@ -193,6 +193,53 @@ scripts/    seed/import/export helper scripts
   .\.venv\Scripts\python scripts/seed.py
   ```
 
+## GitHub Update Workflow (Beginner Friendly)
+- Use this every time you want to upload your latest code changes:
+  1. Check what changed:
+     ```powershell
+     git status
+     ```
+  2. Stage all changes:
+     ```powershell
+     git add .
+     ```
+  3. Save a checkpoint with a short message:
+     ```powershell
+     git commit -m "Describe what you changed"
+     ```
+  4. Upload to GitHub:
+     ```powershell
+     git push
+     ```
+
+## GitHub Update Using VS Code Buttons
+- You can use VS Code Source Control instead of terminal commands:
+  1. Open **Source Control** (branch icon in the left sidebar).
+  2. Review changed files.
+  3. Type a commit message (for example: `update error instructions`).
+  4. Click **Commit**.
+  5. Click **Sync Changes** (or **Push**) to upload to GitHub.
+- Important:
+  - **Commit** saves changes locally on your computer.
+  - **Push/Sync Changes** uploads those committed changes to GitHub.
+
+## About `.gitignore` in This Project
+- `.gitignore` is a "do not upload" list for Git.
+- This project now ignores:
+  - virtual environments like `.venv/`
+  - Python cache files like `__pycache__/`
+  - local database files like `*.db`
+  - local screenshots in `workspace_screenshots/`
+  - `ACCESS_LINKS.md` (contains tokenized private links)
+- If any of these files were already tracked before adding `.gitignore`, untrack them once:
+  ```powershell
+  git rm --cached ACCESS_LINKS.md
+  git rm -r --cached .venv workspace_screenshots
+  git rm --cached *.db *.db-journal *.db-wal *.db-shm
+  git commit -m "Stop tracking local files via .gitignore"
+  git push
+  ```
+
 ## Data File
 - SQLite database file: `app.db` (created in project root)
 

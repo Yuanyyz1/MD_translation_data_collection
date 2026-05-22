@@ -1,0 +1,31 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment files
+.env
+.env.*
+
+# Local SQLite and journaling files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Local screenshots / generated review artifacts
+workspace_screenshots/
+
+# Local tokenized links (can contain private access URLs)
+ACCESS_LINKS.md
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
