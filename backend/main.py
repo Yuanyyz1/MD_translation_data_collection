@@ -44,6 +44,11 @@ app = FastAPI(title="Bilingual Health Professional Annotation Prototype")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+
+def template_response(name: str, context: dict, status_code: int = 200):
+    return templates.TemplateResponse(name=name, context=context, status_code=status_code)
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     Base.metadata.create_all(bind=engine)
@@ -238,7 +243,7 @@ def get_workspace_screenshot_path(health_professional_id: int, dataset_name: str
 
 @app.get("/")
 def root(request: Request, db: Session = Depends(get_db)):
-    return templates.TemplateResponse(
+    return template_response(
         "home.html",
         {
             "request": request,
@@ -307,7 +312,7 @@ def health_professional_tasks(
             }
         )
 
-    return templates.TemplateResponse(
+    return template_response(
         "health_professional_datasets.html",
         {"request": request, "current_user": current_user, "dataset_rows": dataset_rows, "access_token": token},
     )
@@ -382,7 +387,7 @@ def health_professional_tasks_for_dataset(
         row["speaker_category"] = speaker_category(conv.speaker)
         current_group["turns"].append(row)
 
-    return templates.TemplateResponse(
+    return template_response(
         "health_professional_tasks.html",
         {
             "request": request,
@@ -441,7 +446,7 @@ def health_professional_annotate(
         .order_by(Annotation.created_at.asc())
     ).all()
 
-    return templates.TemplateResponse(
+    return template_response(
         "health_professional_annotate.html",
         {
             "request": request,
@@ -688,7 +693,7 @@ def admin_upload_page(
     metadata_rows = get_admin_metadata_rows(db)
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -724,7 +729,7 @@ def admin_create_health_professional(
     professional_role = normalize_professional_role(health_professional_role)
     email = normalize_email(health_professional_email)
     if not name:
-        return templates.TemplateResponse(
+        return template_response(
             "admin_upload.html",
             {
                 "request": request,
@@ -741,7 +746,7 @@ def admin_create_health_professional(
             status_code=400,
         )
     if not professional_role:
-        return templates.TemplateResponse(
+        return template_response(
             "admin_upload.html",
             {
                 "request": request,
@@ -758,7 +763,7 @@ def admin_create_health_professional(
             status_code=400,
         )
     if not email or "@" not in email:
-        return templates.TemplateResponse(
+        return template_response(
             "admin_upload.html",
             {
                 "request": request,
@@ -799,7 +804,7 @@ def admin_create_health_professional(
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
     link = f"http://127.0.0.1:8000/health-professional/{user.access_token}/tasks"
     message = f"Health professional link ready: {name} ({professional_role}, {email}) -> {link}"
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -878,7 +883,7 @@ async def admin_upload_submit(
     try:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError:
-        return templates.TemplateResponse(
+        return template_response(
             "admin_upload.html",
             {
                 "request": request,
@@ -898,7 +903,7 @@ async def admin_upload_submit(
     reader = csv.DictReader(io.StringIO(text))
     required_columns = {"conversation_id", "turn_id", "speaker", "english_text", "chinese_text"}
     if not reader.fieldnames or not required_columns.issubset(set(reader.fieldnames)):
-        return templates.TemplateResponse(
+        return template_response(
             "admin_upload.html",
             {
                 "request": request,
@@ -917,7 +922,7 @@ async def admin_upload_submit(
 
     normalized_dataset_name = (dataset_name or "").strip()
     if not normalized_dataset_name:
-        return templates.TemplateResponse(
+        return template_response(
             "admin_upload.html",
             {
                 "request": request,
@@ -934,7 +939,7 @@ async def admin_upload_submit(
             status_code=400,
         )
     if "/" in normalized_dataset_name or "\\" in normalized_dataset_name:
-        return templates.TemplateResponse(
+        return template_response(
             "admin_upload.html",
             {
                 "request": request,
@@ -962,7 +967,7 @@ async def admin_upload_submit(
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
 
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -1000,7 +1005,7 @@ def admin_delete_dataset(
     metadata_rows = get_admin_metadata_rows(db)
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -1068,7 +1073,7 @@ def admin_assign_health_professional_datasets(
     metadata_rows = get_admin_metadata_rows(db)
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -1103,7 +1108,7 @@ def admin_clear_uploaded_data(
     metadata_rows = get_admin_metadata_rows(db)
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -1137,7 +1142,7 @@ def admin_clear_submitted_output(
     metadata_rows = get_admin_metadata_rows(db)
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -1172,7 +1177,7 @@ def admin_clear_health_professional_tasks(
     metadata_rows = get_admin_metadata_rows(db)
     health_professional_progress_rows = get_health_professional_progress_rows(db)
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
-    return templates.TemplateResponse(
+    return template_response(
         "admin_upload.html",
         {
             "request": request,
@@ -1336,3 +1341,4 @@ def admin_export_csv_by_health_professional_dataset_query(
     filename = f"submitted_export_{safe_email}_{safe_dataset}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers=headers)
+
