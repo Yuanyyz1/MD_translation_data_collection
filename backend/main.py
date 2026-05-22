@@ -59,67 +59,68 @@ def template_response(name: str, context: dict, status_code: int = 200):
 def on_startup() -> None:
     Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
-        user_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()}
-        if "name" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN name TEXT DEFAULT ''"))
-        if "professional_role" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN professional_role TEXT DEFAULT ''"))
-        if "access_token" not in user_columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN access_token TEXT"))
-        conn.execute(text("UPDATE users SET role = 'health_professional' WHERE role = 'doctor'"))
+        if engine.dialect.name == "sqlite":
+            user_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()}
+            if "name" not in user_columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN name TEXT DEFAULT ''"))
+            if "professional_role" not in user_columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN professional_role TEXT DEFAULT ''"))
+            if "access_token" not in user_columns:
+                conn.execute(text("ALTER TABLE users ADD COLUMN access_token TEXT"))
+            conn.execute(text("UPDATE users SET role = 'health_professional' WHERE role = 'doctor'"))
 
-        conversation_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(conversations)")).fetchall()}
-        if "dataset_name" not in conversation_columns:
-            conn.execute(text("ALTER TABLE conversations ADD COLUMN dataset_name TEXT DEFAULT 'default'"))
-        if "source_filename" not in conversation_columns:
-            conn.execute(text("ALTER TABLE conversations ADD COLUMN source_filename TEXT DEFAULT ''"))
-        conn.execute(
-            text(
-                "UPDATE conversations "
-                "SET dataset_name = 'default' "
-                "WHERE dataset_name IS NULL OR dataset_name = ''"
-            )
-        )
-        if "conversation_group_id" not in conversation_columns:
-            conn.execute(text("ALTER TABLE conversations ADD COLUMN conversation_group_id TEXT DEFAULT ''"))
-        conn.execute(
-            text(
-                "UPDATE conversations "
-                "SET conversation_group_id = id "
-                "WHERE conversation_group_id IS NULL OR conversation_group_id = ''"
-            )
-        )
-        if "turn_id" not in conversation_columns:
-            conn.execute(text("ALTER TABLE conversations ADD COLUMN turn_id TEXT DEFAULT ''"))
-        if "speaker" not in conversation_columns:
-            conn.execute(text("ALTER TABLE conversations ADD COLUMN speaker TEXT DEFAULT ''"))
-        if "chinese_text" not in conversation_columns and "chinese_text_original" in conversation_columns:
-            conn.execute(text("ALTER TABLE conversations RENAME COLUMN chinese_text_original TO chinese_text"))
-
-        columns = {row[1] for row in conn.execute(text("PRAGMA table_info(annotations)")).fetchall()}
-        if "clinical_significance" not in columns:
-            conn.execute(text("ALTER TABLE annotations ADD COLUMN clinical_significance INTEGER"))
-        if "subtlety" not in columns:
-            conn.execute(text("ALTER TABLE annotations ADD COLUMN subtlety INTEGER"))
-        if "inserted_error_text" not in columns:
-            conn.execute(text("ALTER TABLE annotations ADD COLUMN inserted_error_text TEXT DEFAULT ''"))
-        if "original_text" not in columns:
-            conn.execute(text("ALTER TABLE annotations ADD COLUMN original_text TEXT DEFAULT ''"))
-
-        submission_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(submissions)")).fetchall()}
-        if "health_professional_id" not in submission_columns and "doctor_id" in submission_columns:
-            conn.execute(text("ALTER TABLE submissions RENAME COLUMN doctor_id TO health_professional_id"))
-            submission_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(submissions)")).fetchall()}
-        if "translated_text_edited" not in submission_columns and "chinese_text_edited" in submission_columns:
-            conn.execute(text("ALTER TABLE submissions RENAME COLUMN chinese_text_edited TO translated_text_edited"))
-
-        users = conn.execute(text("SELECT id, access_token FROM users")).fetchall()
-        for user_id, token in users:
-            if not token:
-                conn.execute(
-                    text("UPDATE users SET access_token = :token WHERE id = :id"),
-                    {"token": secrets.token_urlsafe(16), "id": user_id},
+            conversation_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(conversations)")).fetchall()}
+            if "dataset_name" not in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations ADD COLUMN dataset_name TEXT DEFAULT 'default'"))
+            if "source_filename" not in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations ADD COLUMN source_filename TEXT DEFAULT ''"))
+            conn.execute(
+                text(
+                    "UPDATE conversations "
+                    "SET dataset_name = 'default' "
+                    "WHERE dataset_name IS NULL OR dataset_name = ''"
                 )
+            )
+            if "conversation_group_id" not in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations ADD COLUMN conversation_group_id TEXT DEFAULT ''"))
+            conn.execute(
+                text(
+                    "UPDATE conversations "
+                    "SET conversation_group_id = id "
+                    "WHERE conversation_group_id IS NULL OR conversation_group_id = ''"
+                )
+            )
+            if "turn_id" not in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations ADD COLUMN turn_id TEXT DEFAULT ''"))
+            if "speaker" not in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations ADD COLUMN speaker TEXT DEFAULT ''"))
+            if "chinese_text" not in conversation_columns and "chinese_text_original" in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations RENAME COLUMN chinese_text_original TO chinese_text"))
+
+            columns = {row[1] for row in conn.execute(text("PRAGMA table_info(annotations)")).fetchall()}
+            if "clinical_significance" not in columns:
+                conn.execute(text("ALTER TABLE annotations ADD COLUMN clinical_significance INTEGER"))
+            if "subtlety" not in columns:
+                conn.execute(text("ALTER TABLE annotations ADD COLUMN subtlety INTEGER"))
+            if "inserted_error_text" not in columns:
+                conn.execute(text("ALTER TABLE annotations ADD COLUMN inserted_error_text TEXT DEFAULT ''"))
+            if "original_text" not in columns:
+                conn.execute(text("ALTER TABLE annotations ADD COLUMN original_text TEXT DEFAULT ''"))
+
+            submission_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(submissions)")).fetchall()}
+            if "health_professional_id" not in submission_columns and "doctor_id" in submission_columns:
+                conn.execute(text("ALTER TABLE submissions RENAME COLUMN doctor_id TO health_professional_id"))
+                submission_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(submissions)")).fetchall()}
+            if "translated_text_edited" not in submission_columns and "chinese_text_edited" in submission_columns:
+                conn.execute(text("ALTER TABLE submissions RENAME COLUMN chinese_text_edited TO translated_text_edited"))
+
+            users = conn.execute(text("SELECT id, access_token FROM users")).fetchall()
+            for user_id, token in users:
+                if not token:
+                    conn.execute(
+                        text("UPDATE users SET access_token = :token WHERE id = :id"),
+                        {"token": secrets.token_urlsafe(16), "id": user_id},
+                    )
 
         # Optional Vercel/bootstrap admin account.
         bootstrap_admin_email = normalize_email(os.getenv("BOOTSTRAP_ADMIN_EMAIL", ""))
