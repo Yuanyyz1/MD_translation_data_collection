@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card auth-card">
+    <h2>Login</h2>
+    {% if error %}
+        <p class="message error">{{ error }}</p>
+    {% endif %}
+    <form method="post" action="/login" class="form-grid">
+        <label>Email
+            <input type="email" name="email" required />
+        </label>
+        <label>Password
+            <input type="password" name="password" required />
+        </label>
+        <button type="submit">Sign In</button>
+    </form>
+    <p class="hint">Admin: admin@example.com / admin1234</p>
+    <p class="hint">Doctor: doctor@example.com / doctor1234</p>
+</section>
+{% endblock %}

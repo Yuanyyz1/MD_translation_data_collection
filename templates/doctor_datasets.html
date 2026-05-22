@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <h2>Medical conversations</h2>
+    <p class="hint">Choose which conversations you want to work on.</p>
+
+    {% if dataset_rows|length == 0 %}
+        <p>No datasets uploaded yet. Ask admin to upload a CSV with a dataset name.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Conversations</th>
+                    <th>Submitted</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dataset_rows %}
+                <tr>
+                    <td>{{ row.dataset_name }}</td>
+                    <td>
+                        {% if row.total_count > 0 and row.submitted_count == row.total_count %}
+                            Yes
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+                    <td><a class="btn-link" href="/doctor/{{ access_token }}/tasks/{{ row.dataset_name }}">Open</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</section>
+{% endblock %}

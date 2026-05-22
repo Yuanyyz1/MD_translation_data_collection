@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <h2>Access Links</h2>
+    <p>Use these direct links instead of email/password login.</p>
+
+    {% if admin_user %}
+    <h3>Admin</h3>
+    <p><a class="btn-link" href="/admin/{{ admin_user.access_token }}/upload">Open Admin Portal</a></p>
+    <p><code>/admin/{{ admin_user.access_token }}/upload</code></p>
+    {% else %}
+    <p class="message error">No admin user found. Run <code>python scripts/seed.py</code>.</p>
+    {% endif %}
+
+    <h3>Health Professionals</h3>
+    {% if doctor_users|length == 0 %}
+    <p>No doctor users found. Run <code>python scripts/seed.py</code>.</p>
+    {% else %}
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Access Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in doctor_users %}
+            <tr>
+                <td>{{ u.email }}</td>
+                <td><a class="btn-link" href="/doctor/{{ u.access_token }}/tasks">Open Dataset Options</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</section>
+{% endblock %}

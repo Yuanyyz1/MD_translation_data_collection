@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card annotate-page" data-conversation-id="{{ conversation.id }}" data-doctor-base-path="{{ doctor_base_path }}">
+    <h2>Annotate Conversation {{ conversation.id }}</h2>
+    <p class="hint">
+        Turn ID: <strong>{{ conversation.turn_id if conversation.turn_id else '-' }}</strong>
+        | Speaker: <strong>{{ conversation.speaker if conversation.speaker else '-' }}</strong>
+    </p>
+
+    <div class="panels two-col">
+        <div>
+            <h3>English (Read-only)</h3>
+            <div class="readonly-box">{{ conversation.english_text }}</div>
+        </div>
+        <div>
+            <h3>Baseline Chinese (Read-only)</h3>
+            <div id="baseline-chinese-text" class="readonly-box">{{ conversation.chinese_text }}</div>
+        </div>
+    </div>
+
+    <div class="editor-block">
+        <h3>Edited Chinese (Insert Errors)</h3>
+        <textarea id="edited-text" rows="10">{{ submission.translated_text_edited }}</textarea>
+        <div class="hint">Highlight legend: <span class="hl-red">edited change</span>, <span class="hl-yellow">original changed segment</span>.</div>
+        <div class="panels two-col">
+            <div>
+                <h4>Edited Chinese Highlight Preview</h4>
+                <div id="edited-highlight-preview" class="readonly-box"></div>
+            </div>
+            <div>
+                <h4>Original Chinese Highlight Preview</h4>
+                <div id="original-highlight-preview" class="readonly-box"></div>
+            </div>
+        </div>
+        <p id="autosave-status" class="hint">
+            {% if submission.last_saved_at %}
+                Saved at {{ submission.last_saved_at.strftime('%H:%M:%S') }}
+            {% else %}
+                Not saved yet
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="submit-block">
+        <label class="consent-line">
+            <input type="checkbox" id="consent-checkbox" {% if submission.consent_confirmed %}checked{% endif %}/>
+            <span class="consent-text"><span class="required-star">*</span> I confirm this submission is ready to upload.</span>
+        </label>
+
+        <div class="row">
+            <button id="submit-btn" type="button">Submit (Upload)</button>
+            <button id="discard-btn" type="button" class="secondary">Discard Draft</button>
+            <a class="btn-link" href="/doctor/{{ access_token }}/tasks">Back to Tasks</a>
+        </div>
+        <p id="submit-status" class="hint">
+            Current status: {{ submission.status }}
+            {% if submission.submitted_at %}
+                (submitted at {{ submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }})
+            {% endif %}
+        </p>
+    </div>
+</section>
+{% endblock %}

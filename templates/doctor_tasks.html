@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="workspace-capture-root">
+<section class="card doctor-workspace-header">
+    <h2>Medical Conversation Workspace</h2>
+    <p><strong>Error insertion instructions:</strong></p>
+    <ul>
+        <li>You may insert errors into both patient turns and healthcare professional turns in the medical conversation.</li>
+        <li>You may include multiple errors in a single sentence or leave some sentences error-free, as long as the errors are subtle and clinically significant.</li>
+        <li>Ensure there are at least 10 errors in total.</li>
+        <li>The errors should include omission, substitution, and addition error types (e.g., missing information, incorrect information, or extra information).</li>
+    </ul>
+    <p class="hint">Conversation: <strong>{{ selected_dataset_name }}</strong></p>
+    <p><a class="btn-link workspace-back-link" href="/doctor/{{ access_token }}/tasks">Back to Dataset List</a></p>
+</section>
+
+{% if conversation_groups|length == 0 %}
+<section class="card">
+    <p>No conversations available yet. Ask admin to upload CSV.</p>
+</section>
+{% else %}
+<section class="doctor-workspace" data-doctor-base-path="/doctor/{{ access_token }}" data-dataset-name="{{ selected_dataset_name }}">
+    {% for group in conversation_groups %}
+    <section class="card conversation-thread">
+        <div class="row conversation-thread-meta">
+            <strong>Conversation {{ group.group_id }}</strong>
+            <span class="hint">{{ group.turns|length }} turn{% if group.turns|length != 1 %}s{% endif %}</span>
+        </div>
+
+        <div class="conversation-thread-body">
+            <div class="conversation-column-headings" aria-hidden="true">
+                <div></div>
+                <div class="conversation-column-headings-main">
+                    <div>Original conversations</div>
+                    <div>Translated conversations</div>
+                    <div>Translated conversations with errors</div>
+                </div>
+                <div></div>
+            </div>
+            {% for row in group.turns %}
+            {% set default_error_text = row.conversation.english_text if row.speaker_category == "patient" else row.conversation.chinese_text %}
+            {% set error_column_text = default_error_text if row.status == "not started" else (row.translated_text_edited or default_error_text) %}
+            <article class="conversation-item conversation-turn conversation-turn-{{ row.speaker_category }}" data-conversation-id="{{ row.conversation.id }}" data-status="{{ row.status }}">
+                <div class="conversation-speaker-side">
+                    <span class="speaker-chip">{{ row.conversation.speaker if row.conversation.speaker else '-' }}</span>
+                    <span class="hint">Turn {{ row.conversation.turn_id if row.conversation.turn_id else '-' }}</span>
+                </div>
+
+                <div class="conversation-turn-main">
+                    <div class="conversation-bubble">
+                        <div class="conversation-columns">
+                            {% if row.speaker_category == "patient" %}
+                            <div class="conversation-panel">
+                                <div class="readonly-box">{{ row.conversation.chinese_text }}</div>
+                            </div>
+                            <div class="conversation-panel">
+                                <div class="readonly-box original-chinese-highlight"></div>
+                                <div class="baseline-chinese-text hidden">{{ row.conversation.english_text }}</div>
+                            </div>
+                            {% else %}
+                            <div class="conversation-panel">
+                                <div class="readonly-box">{{ row.conversation.english_text }}</div>
+                            </div>
+                            <div class="conversation-panel">
+                                <div class="readonly-box original-chinese-highlight"></div>
+                                <div class="baseline-chinese-text hidden">{{ row.conversation.chinese_text }}</div>
+                            </div>
+                            {% endif %}
+                            <div class="conversation-panel">
+                                <textarea class="edited-text" rows="6">{{ error_column_text }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="submit-block turn-actions">
+                    <p class="hint status-line autosave-status">
+                        {% if row.last_saved_at %}
+                            Saved at {{ row.last_saved_at.strftime('%H:%M:%S') }}
+                        {% else %}
+                            Not saved yet
+                        {% endif %}
+                    </p>
+                    <p class="hint status-line submit-status">
+                        Current status: {{ row.status }}
+                        {% if row.submitted_at %}
+                            (submitted at {{ row.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }})
+                        {% endif %}
+                    </p>
+                </aside>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+    <section class="card workspace-submit-bar">
+        <div class="row workspace-submit-row">
+            <strong>Ready to upload all edited conversations?</strong>
+            <button type="button" class="workspace-submit-btn">Submit All Conversations</button>
+        </div>
+        <p class="hint workspace-submit-status">Submit when you are ready to upload all turns on this page.</p>
+        <p class="hint workspace-modified-count">Modified turns: 0 / 0</p>
+    </section>
+</section>
+{% endif %}
+</section>
+{% endblock %}

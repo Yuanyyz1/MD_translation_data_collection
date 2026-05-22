@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+    <h2>Admin CSV Upload</h2>
+    <p>Required CSV headers: <code>conversation_id,turn_id,speaker,english_text,chinese_text</code></p>
+
+    {% if message %}
+        <p class="message success">{{ message }}</p>
+    {% endif %}
+    {% if error %}
+        <p class="message error">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" action="/admin/{{ access_token }}/upload" enctype="multipart/form-data" class="form-grid">
+        <label>Dataset Name
+            <input type="text" name="dataset_name" placeholder="e.g. pilot_batch_01" required />
+        </label>
+        <label>Choose CSV file
+            <input type="file" name="file" accept=".csv" required />
+        </label>
+        <button type="submit">Upload CSV</button>
+    </form>
+
+    <hr />
+
+    <h3>Cleanup Uploaded Data</h3>
+    <p>This permanently removes all conversations and related doctor submissions/annotations from the database.</p>
+    <form method="post" action="/admin/{{ access_token }}/clear" onsubmit="return confirm('This will delete all uploaded conversations and related submissions/annotations. Continue?');">
+        <button type="submit">Clear Uploaded Data</button>
+    </form>
+    <p>Need to reset doctor work only? This removes all doctor submissions (draft + submitted) and annotations, but keeps uploaded conversations.</p>
+    <form method="post" action="/admin/{{ access_token }}/clear-doctor-tasks" onsubmit="return confirm('This will delete ALL doctor submissions (draft and submitted) and annotations. Uploaded conversations will be kept. Continue?');">
+        <button type="submit">Clear All Doctor Tasks</button>
+    </form>
+
+    <hr />
+
+    <p>Need to reset export data only? This removes submitted outputs and related annotations, but keeps uploaded conversations.</p>
+    <form method="post" action="/admin/{{ access_token }}/clear-submitted" onsubmit="return confirm('This will delete all submitted outputs and related annotations. Continue?');">
+        <button type="submit">Clear Submitted Output</button>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Current Work Progress By Doctor (Metadata)</h3>
+    {% if doctor_progress_rows|length == 0 %}
+        <p>No doctor users found.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Doctor</th>
+                    <th>Submitted datasets</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in doctor_progress_rows %}
+                <tr>
+                    <td>{{ row.doctor_email }}</td>
+                    <td>{{ row.submitted_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h3>Download Submitted Data By Doctor And Dataset</h3>
+    {% if doctor_dataset_export_rows|length == 0 %}
+        <p>No submitted datasets available yet.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Doctor</th>
+                    <th>Dataset</th>
+                    <th>Modified Turns</th>
+                    <th>Last Submitted At</th>
+                    <th>CSV</th>
+                    <th>Workspace Screenshot</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in doctor_dataset_export_rows %}
+                <tr>
+                    <td>{{ row.doctor_email }}</td>
+                    <td>{{ row.dataset_name }}</td>
+                    <td>{{ row.modified_count }}/{{ row.submitted_count }}</td>
+                    <td>{{ row.last_submitted_at }}</td>
+                    <td><a class="btn-link" href="/admin/{{ access_token }}/export-by-doctor-dataset?doctor_email={{ row.doctor_email | urlencode }}&dataset_name={{ row.dataset_name | urlencode }}">Download CSV</a></td>
+                    <td><a class="btn-link" href="/admin/{{ access_token }}/workspace-screenshot?doctor_email={{ row.doctor_email | urlencode }}&dataset_name={{ row.dataset_name | urlencode }}">Download Screenshot</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</section>
+
+{% endblock %}
