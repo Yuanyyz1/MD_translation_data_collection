@@ -1,6 +1,7 @@
 import csv
 import base64
 import io
+import os
 import re
 import secrets
 from datetime import datetime
@@ -33,7 +34,10 @@ from .models import HealthProfessionalDatasetAssignment
 from .schemas import AnnotationCreateRequest, SaveDraftRequest, SubmitRequest, WorkspaceScreenshotUploadRequest
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-WORKSPACE_SCREENSHOT_DIR = BASE_DIR / "workspace_screenshots"
+if (os.getenv("VERCEL") or "").strip() == "1":
+    WORKSPACE_SCREENSHOT_DIR = Path("/tmp") / "workspace_screenshots"
+else:
+    WORKSPACE_SCREENSHOT_DIR = BASE_DIR / "workspace_screenshots"
 WORKSPACE_SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Bilingual Health Professional Annotation Prototype")
