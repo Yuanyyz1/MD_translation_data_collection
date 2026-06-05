@@ -5,10 +5,12 @@
     <h2>Medical Conversation Workspace</h2>
     <p><strong>Error insertion instructions:</strong></p>
     <ul>
-        <li>You may insert errors into both patient turns and healthcare professional turns in the medical conversation.</li>
-        <li>You may include multiple errors in a single sentence or leave some sentences error-free, as long as the errors are subtle and clinically significant.</li>
-        <li>Ensure there are at least 10 errors in total.</li>
-        <li>The errors should include omission, substitution, and addition error types (e.g., missing information, incorrect information, or extra information).</li>
+        <li>Insert errors in either the patient's or the healthcare professional's turn.</li>
+        <li>Include at least 10 errors across the conversation.</li>
+        <li>Use omission, substitution, and addition error types.</li>
+        <li>Only one error is allowed per turn. If multiple errors can be inserted into the same turn, duplicate the turn using <img class="inline-instruction-icon" src="/static/icons/add-row.png" alt="add row" /> and place only one error in each version. Use <img class="inline-instruction-icon" src="/static/icons/remove-row.png" alt="remove row" /> for removing turns.</li>
+        <li>Some turns may remain error-free and it is all up to you.</li>
+        <li>Keep all errors subtle but clinically significant.</li>
     </ul>
     <p class="hint">Conversation: <strong>{{ selected_dataset_name }}</strong></p>
     <p><a class="btn-link workspace-back-link" href="/health-professional/{{ access_token }}/tasks">Back to Dataset List</a></p>
@@ -44,6 +46,9 @@
                 <div class="conversation-speaker-side">
                     <span class="speaker-chip">{{ row.conversation.speaker if row.conversation.speaker else '-' }}</span>
                     <span class="hint">Turn {{ row.conversation.turn_id if row.conversation.turn_id else '-' }}</span>
+                    {% if row.conversation.duplicated_from_id %}
+                    <span class="hint duplicate-turn-label">Duplicate row</span>
+                    {% endif %}
                 </div>
 
                 <div class="conversation-turn-main">
@@ -74,6 +79,25 @@
                 </div>
 
                 <aside class="submit-block turn-actions">
+                    <div class="duplicate-row-controls">
+                        <button type="button" class="icon-row-btn duplicate-turn-btn" aria-label="Add duplicate row">
+                            <img src="/static/icons/add-row.png" alt="" />
+                        </button>
+                        {% if row.conversation.duplicated_from_id %}
+                        <button type="button" class="icon-row-btn remove-duplicate-turn-btn" title="Remove duplicate row" aria-label="Remove duplicate row">
+                            <img src="/static/icons/remove-row.png" alt="" />
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% if row.conversation.duplicated_from_id %}
+                    <div class="remove-row-confirm hidden">
+                        <p>Remove this duplicate row?</p>
+                        <div class="remove-row-confirm-actions">
+                            <button type="button" class="confirm-remove-duplicate-btn">Remove</button>
+                            <button type="button" class="secondary cancel-remove-duplicate-btn">Cancel</button>
+                        </div>
+                    </div>
+                    {% endif %}
                     <p class="hint status-line autosave-status">
                         {% if row.last_saved_at %}
                             Saved at {{ row.last_saved_at.strftime('%H:%M:%S') }}

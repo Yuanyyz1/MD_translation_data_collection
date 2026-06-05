@@ -36,6 +36,8 @@ class Conversation(Base):
     speaker: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     english_text: Mapped[str] = mapped_column(Text, nullable=False)
     chinese_text: Mapped[str] = mapped_column(Text, nullable=False)
+    duplicated_from_id: Mapped[str] = mapped_column(String(100), nullable=False, default="", index=True)
+    created_by_health_professional_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     submissions: Mapped[list["Submission"]] = relationship("Submission", back_populates="conversation")

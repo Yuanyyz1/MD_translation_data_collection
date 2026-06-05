@@ -368,6 +368,11 @@
     const baselineChineseTextEl = item.querySelector('.baseline-chinese-text');
     const originalChineseHighlight = item.querySelector('.original-chinese-highlight');
     const discardBtn = item.querySelector('.discard-btn');
+    const duplicateTurnBtn = item.querySelector('.duplicate-turn-btn');
+    const removeDuplicateTurnBtn = item.querySelector('.remove-duplicate-turn-btn');
+    const removeRowConfirm = item.querySelector('.remove-row-confirm');
+    const confirmRemoveDuplicateBtn = item.querySelector('.confirm-remove-duplicate-btn');
+    const cancelRemoveDuplicateBtn = item.querySelector('.cancel-remove-duplicate-btn');
 
     if (!conversationId || !editedText || !autosaveStatus || !submitStatus) {
       return;
@@ -532,6 +537,57 @@
           updateWorkspaceModifiedCount();
         } catch (err) {
           alert(`Discard failed: ${err.message}`);
+        }
+      });
+    }
+
+    if (duplicateTurnBtn) {
+      duplicateTurnBtn.addEventListener('click', async function () {
+        duplicateTurnBtn.setAttribute('disabled', 'disabled');
+        try {
+          await postJson(`${health_professionalBasePath}/conversation/${conversationId}/duplicate`, {});
+          window.location.reload();
+        } catch (err) {
+          duplicateTurnBtn.removeAttribute('disabled');
+          autosaveStatus.textContent = `Duplicate failed: ${err.message}`;
+        }
+      });
+    }
+
+    if (removeDuplicateTurnBtn) {
+      removeDuplicateTurnBtn.addEventListener('click', function () {
+        if (removeRowConfirm) {
+          removeRowConfirm.classList.remove('hidden');
+        }
+      });
+    }
+
+    if (cancelRemoveDuplicateBtn && removeRowConfirm) {
+      cancelRemoveDuplicateBtn.addEventListener('click', function () {
+        removeRowConfirm.classList.add('hidden');
+      });
+    }
+
+    if (confirmRemoveDuplicateBtn) {
+      confirmRemoveDuplicateBtn.addEventListener('click', async function () {
+        if (removeRowConfirm) {
+          removeRowConfirm.classList.add('hidden');
+        }
+
+        if (removeDuplicateTurnBtn) {
+          removeDuplicateTurnBtn.setAttribute('disabled', 'disabled');
+        }
+        confirmRemoveDuplicateBtn.setAttribute('disabled', 'disabled');
+        autosaveStatus.textContent = 'Removing duplicate row...';
+        try {
+          await postJson(`${health_professionalBasePath}/conversation/${conversationId}/delete-duplicate`, {});
+          window.location.reload();
+        } catch (err) {
+          if (removeDuplicateTurnBtn) {
+            removeDuplicateTurnBtn.removeAttribute('disabled');
+          }
+          confirmRemoveDuplicateBtn.removeAttribute('disabled');
+          autosaveStatus.textContent = `Remove failed: ${err.message}`;
         }
       });
     }

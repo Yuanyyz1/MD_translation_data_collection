@@ -11,7 +11,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request,
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from .auth import hash_password
@@ -96,6 +96,10 @@ def on_startup() -> None:
                 conn.execute(text("ALTER TABLE conversations ADD COLUMN speaker TEXT DEFAULT ''"))
             if "chinese_text" not in conversation_columns and "chinese_text_original" in conversation_columns:
                 conn.execute(text("ALTER TABLE conversations RENAME COLUMN chinese_text_original TO chinese_text"))
+            if "duplicated_from_id" not in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations ADD COLUMN duplicated_from_id TEXT DEFAULT ''"))
+            if "created_by_health_professional_id" not in conversation_columns:
+                conn.execute(text("ALTER TABLE conversations ADD COLUMN created_by_health_professional_id INTEGER"))
 
             columns = {row[1] for row in conn.execute(text("PRAGMA table_info(annotations)")).fetchall()}
             if "clinical_significance" not in columns:
@@ -121,6 +125,9 @@ def on_startup() -> None:
                         text("UPDATE users SET access_token = :token WHERE id = :id"),
                         {"token": secrets.token_urlsafe(16), "id": user_id},
                     )
+        elif engine.dialect.name == "postgresql":
+            conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS duplicated_from_id TEXT DEFAULT ''"))
+            conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS created_by_health_professional_id INTEGER"))
 
         # Optional Vercel/bootstrap admin account.
         bootstrap_admin_email = normalize_email(os.getenv("BOOTSTRAP_ADMIN_EMAIL", ""))
@@ -294,6 +301,13 @@ def get_workspace_screenshot_path(health_professional_id: int, dataset_name: str
     return WORKSPACE_SCREENSHOT_DIR / f"health_professional_{health_professional_id}__dataset_{safe_dataset}.png"
 
 
+def visible_conversation_filter(current_user: User):
+    return (
+        (Conversation.created_by_health_professional_id.is_(None))
+        | (Conversation.created_by_health_professional_id == current_user.id)
+    )
+
+
 @app.get("/")
 def root(request: Request, db: Session = Depends(get_db)):
     return template_response(
@@ -326,7 +340,10 @@ def health_professional_tasks(
     assigned_set = {(name or "").strip() for name in assigned_datasets if (name or "").strip()}
     if assigned_set:
         conversations = db.scalars(
-            select(Conversation).where(Conversation.dataset_name.in_(assigned_set))
+            select(Conversation).where(
+                Conversation.dataset_name.in_(assigned_set),
+                visible_conversation_filter(current_user),
+            )
         ).all()
     else:
         conversations = []
@@ -386,21 +403,30 @@ def health_professional_tasks_for_dataset(
     assigned_set = {(name or "").strip() for name in assigned_datasets if (name or "").strip()}
     if assigned_set and dataset_name not in assigned_set:
         raise HTTPException(status_code=404, detail="Dataset not assigned to this health professional")
-    conversations = db.scalars(select(Conversation).where(Conversation.dataset_name == dataset_name)).all()
+    conversations = db.scalars(
+        select(Conversation).where(
+            Conversation.dataset_name == dataset_name,
+            visible_conversation_filter(current_user),
+        )
+    ).all()
+    conversation_by_id = {conv.id: conv for conv in conversations}
     submissions = db.scalars(select(Submission).where(Submission.health_professional_id == current_user.id)).all()
     submission_by_conv = {s.conversation_id: s for s in submissions}
 
     def turn_sort_key(conv: Conversation):
         group_id = (conv.conversation_group_id or conv.id).strip().lower()
-        raw = (conv.turn_id or "").strip()
+        duplicate_from = (conv.duplicated_from_id or "").strip()
+        source_conv = conversation_by_id.get(duplicate_from) if duplicate_from else None
+        raw = ((source_conv.turn_id if source_conv else conv.turn_id) or "").strip()
+        duplicate_rank = 1 if duplicate_from else 0
         if not raw:
-            return (group_id, 2, "", conv.id)
+            return (group_id, 2, "", duplicate_rank, conv.created_at, conv.id)
         if raw.isdigit():
-            return (group_id, 0, int(raw), conv.id)
+            return (group_id, 0, int(raw), duplicate_rank, conv.created_at, conv.id)
         match = re.match(r"^(\d+)", raw)
         if match:
-            return (group_id, 1, int(match.group(1)), raw, conv.id)
-        return (group_id, 2, raw.lower(), conv.id)
+            return (group_id, 1, int(match.group(1)), raw, duplicate_rank, conv.created_at, conv.id)
+        return (group_id, 2, raw.lower(), duplicate_rank, conv.created_at, conv.id)
 
     conversations = sorted(conversations, key=turn_sort_key)
 
@@ -626,6 +652,113 @@ def discard_draft(
         "translated_text_edited": submission.translated_text_edited,
         "last_saved_at": submission.last_saved_at.strftime("%H:%M:%S"),
     }
+
+
+@app.post("/health-professional/{token}/conversation/{conversation_id}/duplicate")
+def duplicate_conversation_turn(
+    token: str,
+    conversation_id: str,
+    db: Session = Depends(get_db),
+):
+    current_user = require_user_by_token(db, token, "health_professional")
+    source = db.get(Conversation, conversation_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if source.created_by_health_professional_id not in (None, current_user.id):
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    assigned_datasets = db.scalars(
+        select(HealthProfessionalDatasetAssignment.dataset_name)
+        .where(HealthProfessionalDatasetAssignment.health_professional_id == current_user.id)
+    ).all()
+    assigned_set = {(name or "").strip() for name in assigned_datasets if (name or "").strip()}
+    if assigned_set and source.dataset_name not in assigned_set:
+        raise HTTPException(status_code=404, detail="Dataset not assigned to this health professional")
+
+    original_source_id = (source.duplicated_from_id or source.id).strip()
+    existing_duplicate_count = db.scalar(
+        select(func.count())
+        .select_from(Conversation)
+        .where(
+            Conversation.duplicated_from_id == original_source_id,
+            Conversation.created_by_health_professional_id == current_user.id,
+        )
+    )
+    duplicate_number = int(existing_duplicate_count or 0) + 1
+    duplicate_id = f"dup_{secrets.token_urlsafe(18)}"
+    while db.get(Conversation, duplicate_id):
+        duplicate_id = f"dup_{secrets.token_urlsafe(18)}"
+
+    base_turn_id = (source.turn_id or "").strip() or "turn"
+    duplicate_turn_id = f"{base_turn_id} copy {duplicate_number}"
+    if len(duplicate_turn_id) > 100:
+        duplicate_turn_id = f"copy {duplicate_number}"
+
+    duplicate = Conversation(
+        id=duplicate_id,
+        dataset_name=source.dataset_name,
+        source_filename=source.source_filename,
+        conversation_group_id=source.conversation_group_id,
+        turn_id=duplicate_turn_id,
+        speaker=source.speaker,
+        english_text=source.english_text,
+        chinese_text=source.chinese_text,
+        duplicated_from_id=original_source_id,
+        created_by_health_professional_id=current_user.id,
+    )
+    db.add(duplicate)
+    db.commit()
+    db.refresh(duplicate)
+
+    submission = get_or_create_submission(db, current_user.id, duplicate)
+    default_error_text = duplicate.english_text if (
+        (duplicate.speaker or "").strip().lower() in {"patient"}
+    ) else duplicate.chinese_text
+    submission.translated_text_edited = default_error_text
+    submission.status = "draft"
+    submission.consent_confirmed = False
+    submission.last_saved_at = datetime.utcnow()
+    db.commit()
+
+    return {
+        "ok": True,
+        "conversation_id": duplicate.id,
+        "turn_id": duplicate.turn_id,
+    }
+
+
+@app.post("/health-professional/{token}/conversation/{conversation_id}/delete-duplicate")
+def delete_duplicate_conversation_turn(
+    token: str,
+    conversation_id: str,
+    db: Session = Depends(get_db),
+):
+    current_user = require_user_by_token(db, token, "health_professional")
+    conversation = db.get(Conversation, conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if not (conversation.duplicated_from_id or "").strip():
+        raise HTTPException(status_code=400, detail="Original rows cannot be removed")
+    if conversation.created_by_health_professional_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    submission_ids = db.scalars(
+        select(Submission.id).where(
+            Submission.health_professional_id == current_user.id,
+            Submission.conversation_id == conversation.id,
+        )
+    ).all()
+    if submission_ids:
+        db.query(Annotation).filter(Annotation.submission_id.in_(submission_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(Submission).filter(Submission.id.in_(submission_ids)).delete(
+            synchronize_session=False
+        )
+
+    db.delete(conversation)
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/health-professional/{token}/submission/{conversation_id}/annotations")
