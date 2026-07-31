@@ -247,6 +247,55 @@ td {
   gap: 0.65rem;
 }
 
+.health_professional-workspace-header {
+  margin-bottom: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-color: #cfe0d2;
+  border-left: 5px solid #2f6b3c;
+  background: linear-gradient(135deg, #f7fbf7 0%, #fff 70%);
+  box-shadow: 0 2px 8px rgba(47, 107, 60, 0.08);
+}
+
+.workspace-instructions-title {
+  margin: 0 0 0.4rem;
+  color: #2f6b3c;
+  font-size: 1.05rem;
+}
+
+.health_professional-workspace-header ul {
+  columns: 2;
+  column-gap: 2rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.health_professional-workspace-header li {
+  break-inside: avoid;
+  margin-bottom: 0.28rem;
+  line-height: 1.4;
+}
+
+.workspace-header-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #dce8de;
+}
+
+.workspace-header-footer p {
+  margin: 0;
+}
+
+.workspace-header-footer .workspace-back-link {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.75rem;
+  background: #2f6b3c;
+}
+
 .workspace-submit-bar {
   position: sticky;
   top: 0.75rem;
@@ -751,6 +800,18 @@ body.submission-in-progress {
 
   .conversation-column-headings {
     display: none;
+  }
+
+  .health_professional-workspace-header {
+    padding: 0.75rem;
+  }
+
+  .health_professional-workspace-header ul {
+    columns: 1;
+  }
+
+  .workspace-header-footer {
+    align-items: flex-start;
   }
 
   .conversation-item {

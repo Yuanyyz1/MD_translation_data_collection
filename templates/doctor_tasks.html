@@ -2,16 +2,17 @@
 {% block content %}
 <section class="workspace-capture-root">
 <section class="card health_professional-workspace-header">
-    <h2>Medical Conversation Workspace</h2>
-    <p><strong>Error insertion instructions:</strong></p>
+    <p class="workspace-instructions-title"><strong>Error insertion instructions</strong></p>
     <ul>
         <li>You may insert errors into both patient turns and healthcare professional turns in the medical conversation.</li>
         <li>You may include multiple errors in a single sentence or leave some sentences error-free, as long as the errors are subtle and clinically significant.</li>
         <li>Ensure there are at least 10 errors in total.</li>
         <li>The errors should include omission, substitution, and addition error types (e.g., missing information, incorrect information, or extra information).</li>
     </ul>
-    <p class="hint">Conversation: <strong>{{ selected_dataset_name }}</strong></p>
-    <p><a class="btn-link workspace-back-link" href="/health-professional/{{ access_token }}/tasks">Back</a></p>
+    <div class="workspace-header-footer">
+        <p class="hint">Conversation: <strong>{{ selected_dataset_name }}</strong></p>
+        <a class="btn-link workspace-back-link" href="/health-professional/{{ access_token }}/tasks">Back</a>
+    </div>
 </section>
 
 {% if conversation_groups|length == 0 %}

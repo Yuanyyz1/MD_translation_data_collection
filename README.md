@@ -206,7 +206,7 @@ scripts/    seed/import/export helper scripts
      ```
   3. Save a checkpoint with a short message:
      ```powershell
-     git commit -m "Describe what you changed"
+     git commit -m "Update"
      ```
   4. Upload to GitHub:
      ```powershell
