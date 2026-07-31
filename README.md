@@ -3,7 +3,7 @@
 Beginner-friendly prototype for collecting health professional annotations on translated medical conversations.
 
 ## Features
-- Admin upload of conversation CSV (`conversation_id,turn_id,speaker,english_text,chinese_text`)
+- Admin upload of conversation CSV or XLSX (`conversation_id,turn_id,speaker,english_text,chinese_text`)
 - Health Professional workflow to edit Chinese translation and insert errors
 - Autosave draft (debounced on edit, periodic autosave, blur save, and page-exit save)
 - Submit with required consent checkbox
@@ -51,10 +51,11 @@ scripts/    seed/import/export helper scripts
    .\.venv\Scripts\python -m pip list
    ```
 
-## Uploaded CSV Requirements
+## Uploaded File Requirements
 - Each upload must include a dataset name (you set this in Admin upload form).
-- File type: `.csv`
-- Encoding: `UTF-8` (UTF-8 with BOM is also accepted)
+- File type: `.csv` or `.xlsx`
+- CSV encoding: `UTF-8` (UTF-8 with BOM is also accepted)
+- XLSX data is read from the first worksheet.
 - Header row is required.
 - Required columns (exact names):
   - `conversation_id`
@@ -123,7 +124,7 @@ scripts/    seed/import/export helper scripts
 
 ## How To Use
 1. Open the admin access link.
-2. Enter a dataset name and upload a CSV with headers:
+2. Enter a dataset name and upload a CSV or XLSX file with headers:
    - `conversation_id,turn_id,speaker,english_text,chinese_text`
 3. (Optional) Click `Clear Uploaded Data` in admin page to remove all currently uploaded conversations and related submissions/annotations.
 4. (Optional) Click `Clear Submitted Output` in admin page to remove only submitted outputs and related annotations (uploaded conversations are kept).

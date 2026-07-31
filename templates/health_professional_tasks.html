@@ -83,11 +83,9 @@
                         <button type="button" class="icon-row-btn duplicate-turn-btn" aria-label="Add duplicate row">
                             <img src="/static/icons/add-row.png" alt="" />
                         </button>
-                        {% if row.conversation.duplicated_from_id %}
-                        <button type="button" class="icon-row-btn remove-duplicate-turn-btn" title="Remove duplicate row" aria-label="Remove duplicate row">
+                        <button type="button" class="icon-row-btn remove-duplicate-turn-btn" title="{% if row.conversation.duplicated_from_id %}Remove duplicate row{% else %}Only duplicate rows can be removed{% endif %}" aria-label="{% if row.conversation.duplicated_from_id %}Remove duplicate row{% else %}Original row cannot be removed{% endif %}"{% if not row.conversation.duplicated_from_id %} disabled{% endif %}>
                             <img src="/static/icons/remove-row.png" alt="" />
                         </button>
-                        {% endif %}
                     </div>
                     {% if row.conversation.duplicated_from_id %}
                     <div class="remove-row-confirm hidden">

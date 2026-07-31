@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="card">
-    <h2 class="admin-section-title">Admin CSV Upload</h2>
-    <p>Required CSV headers: <code>conversation_id,turn_id,speaker,english_text,chinese_text</code></p>
+    <h2 class="admin-section-title">Admin Data Upload</h2>
+    <p>Upload a CSV or XLSX file with columns: <code>conversation_id,turn_id,speaker,english_text,chinese_text</code></p>
 
     {% if message %}
         <p class="message success">{{ message }}</p>
@@ -15,14 +15,14 @@
         <label>Dataset Name
             <input type="text" name="dataset_name" placeholder="e.g. pilot_batch_01" required />
         </label>
-        <label>Choose CSV file
-            <input type="file" name="file" accept=".csv" required />
+        <label>Choose CSV or XLSX file
+            <input type="file" name="file" accept=".csv,.xlsx" required />
         </label>
         <label style="display:flex;align-items:center;gap:8px;">
             <input type="checkbox" name="replace_existing" value="1" />
             Replace existing dataset with same name
         </label>
-        <button type="submit">Upload CSV</button>
+        <button type="submit">Upload File</button>
     </form>
 
     <hr />

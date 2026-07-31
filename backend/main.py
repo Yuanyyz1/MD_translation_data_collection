@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request,
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from openpyxl import load_workbook
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
@@ -43,6 +44,13 @@ WORKSPACE_SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 app = FastAPI(title="Bilingual Health Professional Annotation Prototype")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+REQUIRED_UPLOAD_COLUMNS = {
+    "conversation_id",
+    "turn_id",
+    "speaker",
+    "english_text",
+    "chinese_text",
+}
 
 
 def template_response(name: str, context: dict, status_code: int = 200):
@@ -53,6 +61,60 @@ def template_response(name: str, context: dict, status_code: int = 200):
         context=context,
         status_code=status_code,
     )
+
+
+def parse_conversation_upload(filename: str, content: bytes) -> list[dict[str, str]]:
+    suffix = Path(filename).suffix.lower()
+    if suffix == ".csv":
+        try:
+            text = content.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError("Could not decode file. Please upload a UTF-8 CSV.") from exc
+
+        reader = csv.DictReader(io.StringIO(text))
+        fieldnames = {str(name).strip() for name in (reader.fieldnames or []) if name}
+        if not REQUIRED_UPLOAD_COLUMNS.issubset(fieldnames):
+            raise ValueError(
+                "File must contain columns: "
+                "conversation_id, turn_id, speaker, english_text, chinese_text"
+            )
+        return list(reader)
+
+    if suffix == ".xlsx":
+        try:
+            workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+        except Exception as exc:
+            raise ValueError("Could not read the XLSX workbook.") from exc
+
+        try:
+            worksheet = workbook.active
+            values = worksheet.iter_rows(values_only=True)
+            header_values = next(values, None)
+            if not header_values:
+                raise ValueError("The XLSX workbook is empty.")
+
+            headers = [
+                str(value).strip() if value is not None else ""
+                for value in header_values
+            ]
+            if not REQUIRED_UPLOAD_COLUMNS.issubset(set(headers)):
+                raise ValueError(
+                    "File must contain columns: "
+                    "conversation_id, turn_id, speaker, english_text, chinese_text"
+                )
+
+            return [
+                {
+                    header: "" if value is None else str(value)
+                    for header, value in zip(headers, row_values)
+                    if header
+                }
+                for row_values in values
+            ]
+        finally:
+            workbook.close()
+
+    raise ValueError("Unsupported file type. Please upload a .csv or .xlsx file.")
 
 
 @app.on_event("startup")
@@ -1106,35 +1168,15 @@ async def admin_upload_submit(
     health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
     content = await file.read()
     try:
-        text = content.decode("utf-8-sig")
-    except UnicodeDecodeError:
+        rows = parse_conversation_upload(file.filename or "", content)
+    except ValueError as exc:
         return template_response(
             "admin_upload.html",
             {
                 "request": request,
                 "current_user": current_user,
                 "message": None,
-                "error": "Could not decode file. Please upload UTF-8 CSV.",
-                "metadata_rows": metadata_rows,
-                "health_professional_progress_rows": health_professional_progress_rows,
-                "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
-            "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
-            "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
-                "access_token": token,
-            },
-            status_code=400,
-        )
-
-    reader = csv.DictReader(io.StringIO(text))
-    required_columns = {"conversation_id", "turn_id", "speaker", "english_text", "chinese_text"}
-    if not reader.fieldnames or not required_columns.issubset(set(reader.fieldnames)):
-        return template_response(
-            "admin_upload.html",
-            {
-                "request": request,
-                "current_user": current_user,
-                "message": None,
-                "error": "CSV must contain columns: conversation_id, turn_id, speaker, english_text, chinese_text",
+                "error": str(exc),
                 "metadata_rows": metadata_rows,
                 "health_professional_progress_rows": health_professional_progress_rows,
                 "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
@@ -1205,7 +1247,6 @@ async def admin_upload_submit(
             status_code=400,
         )
 
-    rows = list(reader)
     uploaded_filename = (file.filename or '').strip()
     inserted, updated = upsert_conversations_from_rows(db, rows, normalized_dataset_name, uploaded_filename)
     message = (
