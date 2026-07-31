@@ -321,6 +321,26 @@ body.submission-in-progress {
   animation: submission-spin 0.85s linear infinite;
 }
 
+.submission-overlay-card.is-success .submission-spinner {
+  display: grid;
+  place-items: center;
+  border: none;
+  background: #2f6b3c;
+  color: #fff;
+  animation: none;
+}
+
+.submission-overlay-card.is-success .submission-spinner::after {
+  content: "✓";
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.submission-overlay-card.is-success h2 {
+  color: #2f6b3c;
+}
+
 @keyframes submission-spin {
   to {
     transform: rotate(360deg);

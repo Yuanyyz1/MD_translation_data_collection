@@ -10,10 +10,18 @@
   const workspaceSubmitStatus = workspace.querySelector('.workspace-submit-status');
   const workspaceModifiedCount = workspace.querySelector('.workspace-modified-count');
   const submissionOverlay = document.querySelector('.submission-overlay');
+  const submissionOverlayCard = document.querySelector('.submission-overlay-card');
+  const submissionOverlayTitle = document.querySelector('.submission-overlay-title');
   const submissionOverlayStatus = document.querySelector('.submission-overlay-status');
   const MAX_DP_CELLS = 1200000;
 
   function showSubmissionOverlay(message) {
+    if (submissionOverlayCard) {
+      submissionOverlayCard.classList.remove('is-success');
+    }
+    if (submissionOverlayTitle) {
+      submissionOverlayTitle.textContent = 'Submitting conversations';
+    }
     if (submissionOverlayStatus && message) {
       submissionOverlayStatus.textContent = message;
     }
@@ -30,6 +38,18 @@
       submissionOverlay.setAttribute('aria-hidden', 'true');
     }
     document.body.classList.remove('submission-in-progress');
+  }
+
+  function showSubmissionSuccess() {
+    if (submissionOverlayCard) {
+      submissionOverlayCard.classList.add('is-success');
+    }
+    if (submissionOverlayTitle) {
+      submissionOverlayTitle.textContent = 'Submission complete';
+    }
+    if (submissionOverlayStatus) {
+      submissionOverlayStatus.textContent = 'All conversations were submitted successfully. Returning to the dataset list...';
+    }
   }
 
   async function postJson(url, payload) {
@@ -743,11 +763,10 @@
 
       updateWorkspaceSubmitState();
       if (failedConversationIds.length === 0) {
-        if (submissionOverlayStatus) {
-          submissionOverlayStatus.textContent = 'All conversations have been submitted successfully.';
-        }
-        alert('All conversations have been submitted successfully.');
-        window.location.assign(`${health_professionalBasePath}/tasks`);
+        showSubmissionSuccess();
+        window.setTimeout(function () {
+          window.location.assign(`${health_professionalBasePath}/tasks`);
+        }, 1500);
       }
     });
   }
