@@ -9,7 +9,28 @@
   const workspaceSubmitBtn = workspace.querySelector('.workspace-submit-btn');
   const workspaceSubmitStatus = workspace.querySelector('.workspace-submit-status');
   const workspaceModifiedCount = workspace.querySelector('.workspace-modified-count');
+  const submissionOverlay = document.querySelector('.submission-overlay');
+  const submissionOverlayStatus = document.querySelector('.submission-overlay-status');
   const MAX_DP_CELLS = 1200000;
+
+  function showSubmissionOverlay(message) {
+    if (submissionOverlayStatus && message) {
+      submissionOverlayStatus.textContent = message;
+    }
+    if (submissionOverlay) {
+      submissionOverlay.classList.remove('hidden');
+      submissionOverlay.setAttribute('aria-hidden', 'false');
+    }
+    document.body.classList.add('submission-in-progress');
+  }
+
+  function hideSubmissionOverlay() {
+    if (submissionOverlay) {
+      submissionOverlay.classList.add('hidden');
+      submissionOverlay.setAttribute('aria-hidden', 'true');
+    }
+    document.body.classList.remove('submission-in-progress');
+  }
 
   async function postJson(url, payload) {
     const res = await fetch(url, {
@@ -671,11 +692,16 @@
       if (workspaceSubmitStatus) {
         workspaceSubmitStatus.textContent = 'Submitting all turns on this page...';
       }
+      showSubmissionOverlay('Preparing all conversations for submission...');
 
       const failedConversationIds = [];
       let submittedCount = 0;
 
-      for (const editor of editors) {
+      for (let editorIndex = 0; editorIndex < editors.length; editorIndex += 1) {
+        const editor = editors[editorIndex];
+        if (submissionOverlayStatus) {
+          submissionOverlayStatus.textContent = `Submitting turn ${editorIndex + 1} of ${editors.length}...`;
+        }
         try {
           const result = await editor.submit();
           if (!result.skipped) {
@@ -697,8 +723,12 @@
       }
 
       if (failedConversationIds.length > 0) {
+        hideSubmissionOverlay();
         alert(`Some turns could not be submitted:\n${failedConversationIds.join('\n')}`);
       } else if (submittedCount > 0) {
+        if (submissionOverlayStatus) {
+          submissionOverlayStatus.textContent = 'All turns submitted. Saving the final workspace record...';
+        }
         try {
           await uploadWorkspaceScreenshot();
           if (workspaceSubmitStatus) {
@@ -712,6 +742,13 @@
       }
 
       updateWorkspaceSubmitState();
+      if (failedConversationIds.length === 0) {
+        if (submissionOverlayStatus) {
+          submissionOverlayStatus.textContent = 'All conversations have been submitted successfully.';
+        }
+        alert('All conversations have been submitted successfully.');
+        window.location.assign(`${health_professionalBasePath}/tasks`);
+      }
     });
   }
 

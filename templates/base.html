@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ title if title else 'Annotation App' }}</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260410-7" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260731-2" />
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <h1>Medical Translation Annotation</h1>
+            <h1>Medical Error Insertion</h1>
             <nav>
                 {% if current_user %}
                     <span class="user-badge">{{ current_user.email }} ({{ current_user.role }})</span>
@@ -23,6 +23,6 @@
     </main>
 
     <script src="/static/app.js?v=20260410-7"></script>
-    <script src="/static/health_professional_workspace.js?v=20260410-8"></script>
+    <script src="/static/health_professional_workspace.js?v=20260731-1"></script>
 </body>
 </html>

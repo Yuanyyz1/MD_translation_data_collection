@@ -13,7 +13,7 @@
         <li>Keep all errors subtle but clinically significant.</li>
     </ul>
     <p class="hint">Conversation: <strong>{{ selected_dataset_name }}</strong></p>
-    <p><a class="btn-link workspace-back-link" href="/health-professional/{{ access_token }}/tasks">Back to Dataset List</a></p>
+    <p><a class="btn-link workspace-back-link" href="/health-professional/{{ access_token }}/tasks">Back</a></p>
 </section>
 
 {% if conversation_groups|length == 0 %}
@@ -126,4 +126,11 @@
 </section>
 {% endif %}
 </section>
+<div class="submission-overlay hidden" aria-hidden="true">
+    <div class="submission-overlay-card" role="status" aria-live="polite">
+        <div class="submission-spinner" aria-hidden="true"></div>
+        <h2>Submitting conversations</h2>
+        <p class="submission-overlay-status">Please wait while all turns are submitted.</p>
+    </div>
+</div>
 {% endblock %}
