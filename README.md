@@ -212,6 +212,7 @@ scripts/    seed/import/export helper scripts
      ```powershell
      git push
      ```
+  5. test:
 
 ## GitHub Update Using VS Code Buttons
 - You can use VS Code Source Control instead of terminal commands:
