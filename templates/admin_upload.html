@@ -123,7 +123,7 @@
                         {% else %}
                             {% for item in row.submitted_dataset_details %}
                                 <div>
-                                    <strong>{{ item.dataset_name }}</strong>:
+                                    <strong class="dataset-name-text">{{ item.dataset_name }}</strong>:
                                     {{ item.submitted_turns }}/{{ item.total_turns }} turns,
                                     {% if item.completed %}Submitted{% else %}Not submitted{% endif %}
                                 </div>
@@ -142,14 +142,29 @@
                                     <option value="{{ dataset_name }}" {% if row.assigned_dataset_1 == dataset_name %}selected{% endif %}>{{ dataset_name }}</option>
                                 {% endfor %}
                             </select>
-                            <select name="dataset_name_2" required>
-                                <option value="" {% if not row.assigned_dataset_2 %}selected{% endif %}>Select dataset 2</option>
+                            <select name="dataset_name_2">
+                                <option value="" {% if not row.assigned_dataset_2 %}selected{% endif %}>Optional second dataset</option>
                                 {% for dataset_name in available_dataset_names %}
                                     <option value="{{ dataset_name }}" {% if row.assigned_dataset_2 == dataset_name %}selected{% endif %}>{{ dataset_name }}</option>
                                 {% endfor %}
                             </select>
                             <button type="submit">Save Datasets</button>
                         </form>
+                        {% if row.assigned_dataset_1 or row.assigned_dataset_2 %}
+                        <div class="assigned-dataset-list">
+                            <strong>Current access</strong>
+                            {% for assigned_dataset in [row.assigned_dataset_1, row.assigned_dataset_2] %}
+                                {% if assigned_dataset %}
+                                <form method="post" action="/admin/{{ access_token }}/remove-health-professional-dataset" class="assigned-dataset-remove-form" onsubmit="return confirm('Remove access to this dataset for {{ row.health_professional_email }}? Existing submitted and draft data will be kept.');">
+                                    <input type="hidden" name="health_professional_email" value="{{ row.health_professional_email }}" />
+                                    <input type="hidden" name="dataset_name" value="{{ assigned_dataset }}" />
+                                    <span class="dataset-name-text">{{ assigned_dataset }}</span>
+                                    <button type="submit" class="secondary">Remove Access</button>
+                                </form>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         <form method="post" action="/admin/{{ access_token }}/delete-health-professional" onsubmit="return confirm('Delete this health professional account, link, and all their submitted/draft data? This cannot be undone.');">
                             <input type="hidden" name="health_professional_email" value="{{ row.health_professional_email }}" />
                             <button type="submit" class="secondary">Delete User</button>

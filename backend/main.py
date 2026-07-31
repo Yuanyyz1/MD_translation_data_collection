@@ -1319,7 +1319,7 @@ def admin_assign_health_professional_datasets(
     request: Request,
     health_professional_email: str = Form(...),
     dataset_name_1: str = Form(...),
-    dataset_name_2: str = Form(...),
+    dataset_name_2: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
     current_user = require_user_by_token(db, token, "admin")
@@ -1328,15 +1328,15 @@ def admin_assign_health_professional_datasets(
     dataset_2 = (dataset_name_2 or "").strip()
     available = set(get_available_dataset_names(db))
 
-    if not dataset_1 or not dataset_2:
+    if not dataset_1:
         message = None
-        error = "Please select two datasets."
-    elif dataset_1 == dataset_2:
+        error = "Please select at least one dataset."
+    elif dataset_2 and dataset_1 == dataset_2:
         message = None
         error = "Please select two different datasets."
-    elif dataset_1 not in available or dataset_2 not in available:
+    elif dataset_1 not in available or (dataset_2 and dataset_2 not in available):
         message = None
-        error = "One or both selected datasets are not available."
+        error = "A selected dataset is not available."
     else:
         user = db.scalar(select(User).where(User.email == email, User.role == "health_professional"))
         if not user:
@@ -1351,13 +1351,15 @@ def admin_assign_health_professional_datasets(
                     health_professional_id=user.id, slot=1, dataset_name=dataset_1
                 )
             )
-            db.add(
-                HealthProfessionalDatasetAssignment(
-                    health_professional_id=user.id, slot=2, dataset_name=dataset_2
+            if dataset_2:
+                db.add(
+                    HealthProfessionalDatasetAssignment(
+                        health_professional_id=user.id, slot=2, dataset_name=dataset_2
+                    )
                 )
-            )
             db.commit()
-            message = f"Assigned datasets to {email}: {dataset_1}, {dataset_2}"
+            assigned_names = ", ".join(name for name in (dataset_1, dataset_2) if name)
+            message = f"Assigned datasets to {email}: {assigned_names}"
             error = None
 
     metadata_rows = get_admin_metadata_rows(db)
@@ -1374,6 +1376,71 @@ def admin_assign_health_professional_datasets(
             "health_professional_progress_rows": health_professional_progress_rows,
             "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
             "health_professional_link_rows": get_health_professional_link_rows(db, build_base_url(request)),
+            "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
+            "available_dataset_names": get_available_dataset_names(db),
+            "access_token": token,
+        },
+    )
+
+
+@app.post("/admin/{token}/remove-health-professional-dataset")
+def admin_remove_health_professional_dataset(
+    token: str,
+    request: Request,
+    health_professional_email: str = Form(...),
+    dataset_name: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    current_user = require_user_by_token(db, token, "admin")
+    email = normalize_email(health_professional_email)
+    target_dataset = (dataset_name or "").strip()
+    user = db.scalar(
+        select(User).where(User.email == email, User.role == "health_professional")
+    )
+
+    if not user:
+        message = None
+        error = "Health professional not found."
+    else:
+        assignment = db.scalar(
+            select(HealthProfessionalDatasetAssignment).where(
+                HealthProfessionalDatasetAssignment.health_professional_id == user.id,
+                HealthProfessionalDatasetAssignment.dataset_name == target_dataset,
+            )
+        )
+        if not assignment:
+            message = None
+            error = "Dataset assignment not found."
+        else:
+            db.delete(assignment)
+            db.flush()
+            remaining_assignments = db.scalars(
+                select(HealthProfessionalDatasetAssignment)
+                .where(HealthProfessionalDatasetAssignment.health_professional_id == user.id)
+                .order_by(HealthProfessionalDatasetAssignment.slot.asc())
+            ).all()
+            for slot, remaining_assignment in enumerate(remaining_assignments, start=1):
+                remaining_assignment.slot = slot
+            db.commit()
+            message = f"Removed dataset access for {email}: {target_dataset}"
+            error = None
+
+    metadata_rows = get_admin_metadata_rows(db)
+    health_professional_progress_rows = get_health_professional_progress_rows(db)
+    health_professional_dataset_export_rows = get_health_professional_dataset_export_rows(db)
+    return template_response(
+        "admin_upload.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "message": message,
+            "error": error,
+            "metadata_rows": metadata_rows,
+            "health_professional_progress_rows": health_professional_progress_rows,
+            "health_professional_dataset_export_rows": health_professional_dataset_export_rows,
+            "health_professional_link_rows": get_health_professional_link_rows(
+                db, build_base_url(request)
+            ),
             "uploaded_dataset_rows": get_uploaded_dataset_rows(db),
             "available_dataset_names": get_available_dataset_names(db),
             "access_token": token,

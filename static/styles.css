@@ -564,7 +564,7 @@ td {
 
 .hp-progress-table {
   width: 100%;
-  min-width: 1120px;
+  min-width: 1280px;
   table-layout: fixed;
 }
 
@@ -578,34 +578,41 @@ td {
 
 .hp-progress-table th:nth-child(1),
 .hp-progress-table td:nth-child(1) {
-  width: 14%;
+  width: 12%;
 }
 
 .hp-progress-table th:nth-child(2),
 .hp-progress-table td:nth-child(2) {
-  width: 12%;
+  width: 10%;
 }
 
 .hp-progress-table th:nth-child(3),
 .hp-progress-table td:nth-child(3) {
-  width: 20%;
+  width: 18%;
   word-break: break-word;
 }
 
 .hp-progress-table th:nth-child(4),
 .hp-progress-table td:nth-child(4) {
-  width: 8%;
-  text-align: center;
+  width: 20%;
+  text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .hp-progress-table th:nth-child(5),
 .hp-progress-table td:nth-child(5) {
-  width: 16%;
+  width: 14%;
 }
 
 .hp-progress-table th:nth-child(6),
 .hp-progress-table td:nth-child(6) {
-  width: 30%;
+  width: 26%;
+}
+
+.hp-progress-table .dataset-name-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .hp-progress-table td .access-link-text {
@@ -633,6 +640,27 @@ td {
 
 .hp-progress-table td form + form {
   margin-top: 0.45rem;
+}
+
+.assigned-dataset-list {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #ddd;
+  font-size: 0.86rem;
+}
+
+.hp-progress-table td .assigned-dataset-remove-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.hp-progress-table td .assigned-dataset-remove-form button {
+  width: auto;
+  white-space: nowrap;
 }
 
 @media (max-width: 840px) {
